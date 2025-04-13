@@ -14,6 +14,6 @@
   
   <!-- Text: PromptLane -->
   <text x="60" y="38" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#333333">
-    <tspan fill="#4A6CF7">Prompt</tspan><tspan fill="#9439FF">Hub</tspan>
+    <tspan fill="#4A6CF7">Prompt</tspan><tspan fill="#9439FF">Lane</tspan>
   </text>
 </svg> 
