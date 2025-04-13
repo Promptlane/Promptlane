@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - {{settings.APP.NAME}}{% endblock %}
+
+{% block content %}
+<div class="error-container text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-exclamation-circle" style="font-size: 5rem; color: var(--bs-gray-500);"></i>
+    </div>
+    <h1 class="display-4 mb-3">404</h1>
+    <h2 class="mb-4">Page Not Found</h2>
+    <p class="lead mb-5">The page you were looking for doesn't exist or has been moved.</p>
+    <div class="d-grid gap-3 d-sm-flex justify-content-center">
+        <a href="javascript:history.back()" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>Go Back
+        </a>
+        <a href="/" class="btn btn-primary">
+            <i class="bi bi-house-door me-2"></i>Go Home
+        </a>
+    </div>
+</div>
+
+<style>
+    .error-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %} 

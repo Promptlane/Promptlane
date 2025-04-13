@@ -1,0 +1,79 @@
+services:
+  promptlane:
+    profiles: ["development", "production"]
+    build:
+      context: .
+      dockerfile: docker/${BUILD_TARGET:-development}.Dockerfile
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+    container_name: promptlane
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - promptlane-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    env_file:
+      - .env.${ENVIRONMENT:-development}
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=promptlane
+  
+  db:
+    profiles: ["development", "production"]
+    image: postgres:15
+    volumes:
+      - promptlane_db_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - promptlane-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: postgres -c 'password_encryption=scram-sha-256'
+    env_file:
+      - .env.${ENVIRONMENT:-development}
+  
+  pgadmin:
+    profiles: ["development"]
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_SERVER_JSON_FILE=/pgadmin4/servers.json
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json
+      - ./pgpass:/pgpass
+    networks:
+      - promptlane-network
+    restart: unless-stopped
+    env_file:
+      - .env.${ENVIRONMENT:-development}
+
+networks:
+  promptlane-network:
+    driver: bridge
+
+volumes:
+  promptlane_db_data:
+  pgadmin_data:

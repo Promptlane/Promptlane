@@ -1,0 +1,93 @@
+<!-- Sidebar Navigation -->
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <div class="brand-logo">
+      <img src="{{ url_for('static', path='img/logo.png') }}" alt="{{settings.APP.NAME}} Logo" class="logo-img">
+      <span class="logo-text">{{settings.APP.NAME}}</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ul>
+      <li class="{{ 'active' if active_page == 'dashboard' else '' }}">
+        <a href="/admin/dashboard" class="nav-link">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="{{ 'active' if active_page == 'users' else '' }}">
+        <a href="/admin/users" class="nav-link">
+          <i class="bi bi-people"></i>
+          <span>Users</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="{{ 'active' if active_page == 'teams' else '' }}">
+        <a href="/admin/teams" class="nav-link">
+          <i class="bi bi-people-fill"></i>
+          <span>Teams</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="{{ 'active' if active_page == 'projects' else '' }}">
+        <a href="/admin/projects" class="nav-link">
+          <i class="bi bi-kanban"></i>
+          <span>Projects</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="{{ 'active' if active_page == 'prompts' else '' }}">
+        <a href="/admin/prompts" class="nav-link">
+          <i class="bi bi-chat-left-text"></i>
+          <span>Prompts</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="nav-section">
+        <span>Insights</span>
+      </li>
+      <li class="{{ 'active' if active_page == 'reports' else '' }}">
+        <a href="/admin/reports" class="nav-link">
+          <i class="bi bi-bar-chart"></i>
+          <span>Reports</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="{{ 'active' if active_page == 'logs' else '' }}">
+        <a href="/admin/logs" class="nav-link">
+          <i class="bi bi-journal-text"></i>
+          <span>Audit Logs</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="nav-section">
+        <span>Configuration</span>
+      </li>
+      <li class="{{ 'active' if active_page == 'settings' else '' }}">
+        <a href="/admin/settings" class="nav-link">
+          <i class="bi bi-gear"></i>
+          <span>Settings</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+      <li class="{{ 'active' if active_page == 'security' else '' }}">
+        <a href="/admin/security" class="nav-link">
+          <i class="bi bi-shield-lock"></i>
+          <span>Security</span>
+          <span class="nav-indicator"></span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/admin/help" class="{{ 'active' if active_page == 'help' else '' }}">
+      <i class="bi bi-question-circle"></i>
+      <span>Help</span>
+    </a>
+    <a href="/logout">
+      <i class="bi bi-box-arrow-right"></i>
+      <span>Logout</span>
+    </a>
+  </div>
+</aside> 

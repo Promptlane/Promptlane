@@ -1,0 +1,11 @@
+/* Promptlane Admin Interface - Main CSS File */
+
+/* Import all modular CSS files */
+@import 'variables.css';
+@import 'base.css';
+@import 'header.css';
+@import 'sidebar.css';
+@import 'components.css';
+@import 'dashboard.css';
+@import 'users.css';
+@import 'animations.css'; 

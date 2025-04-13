@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} | {{ settings.APP.NAME }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="/projects">Projects</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ project.name }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <div class="d-flex align-items-center mb-2">
+            <a href="/projects" class="btn btn-sm btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i> Back to Projects
+            </a>
+            <h1 class="mb-0">{{ project.name }}</h1>
+        </div>
+        <p class="page-subtitle">
+            Created {{ project.created_at }} by {{ project.created_by }}
+            {% if project.updated_at and project.updated_at != project.created_at %}
+            • Updated {{ project.updated_at }}
+            {% endif %}
+        </p>
+    </div>
+    <div class="d-flex">
+        <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editProjectModal">
+            <i class="bi bi-pencil"></i> Edit Project
+        </button>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProjectModal">
+            <i class="bi bi-trash"></i> Delete Project
+        </button>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Project Description</h5>
+                <p class="card-text">{{ project.description }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Prompts</h2>
+    {% if project.prompts %}
+    <a href="/projects/{{ project.id }}/prompts/create" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> New Prompt
+    </a>
+    {% endif %}
+</div>
+
+{% if project.prompts %}
+<!-- Prompt search bar -->
+<div class="content-container mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div class="d-flex search-form flex-grow-1 me-md-3 mb-3 mb-md-0">
+            <div class="input-group">
+                <input type="search" class="form-control" id="promptSearch" placeholder="Search prompts..." aria-label="Search prompts">
+                <button class="btn btn-outline-secondary" type="button" id="promptSearchButton">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="d-flex">
+            <div class="btn-group me-2" role="group" aria-label="Filter options">
+                <button type="button" class="btn btn-outline-secondary active" data-filter="all">All</button>
+                <button type="button" class="btn btn-outline-secondary" data-filter="enabled">Enabled</button>
+                <button type="button" class="btn btn-outline-secondary" data-filter="disabled">Disabled</button>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="promptSortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-sort-alpha-down me-1"></i> Sort
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="promptSortDropdown">
+                    <li><a class="dropdown-item active" href="#" data-sort="name-asc">Name (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="#" data-sort="name-desc">Name (Z-A)</a></li>
+                    <li><a class="dropdown-item" href="#" data-sort="created-asc">Oldest first</a></li>
+                    <li><a class="dropdown-item" href="#" data-sort="created-desc">Newest first</a></li>
+                    <li><a class="dropdown-item" href="#" data-sort="version-desc">Version (highest first)</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="promptsList">
+    {% for prompt in project.prompts %}
+    <div class="col">
+        <div class="card h-100" style="cursor: pointer;" onclick="window.location.href='/projects/{{ project.id }}/prompts/{{ prompt.id }}'">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ prompt.name }}</h5>
+                    <span class="badge {% if prompt.enabled|default(true) %}bg-success{% else %}bg-secondary{% endif %} rounded-pill">
+                        {% if prompt.enabled|default(true) %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+                {% if prompt.description %}
+                <p class="card-text small text-truncate mb-3">{{ prompt.description }}</p>
+                {% endif %}
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                    <span class="badge bg-primary rounded-pill">
+                        <i class="bi bi-tag-fill me-1"></i> v{{ prompt.version|default('1.0') }}
+                        {% if prompt.has_history|default(false) %}
+                        <span class="badge bg-light text-dark ms-1">+</span>
+                        {% endif %}
+                    </span>
+                    {% if prompt.variables|default([]) %}
+                    <span class="badge bg-info rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="Has {{ prompt.variables|length }} variables">
+                        <i class="bi bi-braces me-1"></i> {{ prompt.variables|length }} vars
+                    </span>
+                    {% endif %}
+                    {% if prompt.last_used %}
+                    <span class="badge bg-light text-dark rounded-pill" data-bs-toggle="tooltip" data-bs-placement="top" title="Last used: {{ prompt.last_used }}">
+                        <i class="bi bi-clock-history me-1"></i> {{ prompt.last_used }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Created {{ prompt.created_at }}</small>
+                    <div>
+                        <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="col-12">
+    <div class="empty-state-container text-center py-5">
+        <div class="empty-state-icon mb-4">
+            <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+        </div>
+        <h3 class="mb-3">No Prompts Yet</h3>
+        <p class="text-muted mb-4">Get started by creating your first prompt template for this project.</p>
+        <div class="empty-state-actions">
+            <a href="/projects/{{ project.id }}/prompts/create" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-lg me-2"></i> Create Your First Prompt
+            </a>
+            <div class="mt-4">
+                <p class="text-muted small mb-2">Need help getting started?</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="#" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-book me-1"></i> View Documentation
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-play-circle me-1"></i> Watch Tutorial
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="/projects/{{ project.id }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ project.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ project.description }}</textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Update Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Project Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this project? This action cannot be undone.</p>
+                <p class="fw-bold">All prompts in this project will also be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="/projects/{{ project.id }}/delete">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Format relative time for badges that need it
+        formatRelativeTimes();
+        
+        // Setup prompt search and sort functionality
+        setupPromptSearch();
+    });
+    
+    // Format relative times for last used timestamps
+    function formatRelativeTimes() {
+        // Get all the badges with last_used timestamps
+        const timestampBadges = document.querySelectorAll('.badge.bg-light.text-dark');
+        
+        timestampBadges.forEach(badge => {
+            // Get the title attribute which contains the full timestamp
+            const fullTimestamp = badge.getAttribute('title').replace('Last used: ', '');
+            
+            if (fullTimestamp) {
+                // Get the badge text (excluding the icon)
+                const currentText = badge.textContent.trim();
+                
+                // If the text is the same as the timestamp (not formatted), then format it
+                if (currentText === fullTimestamp || !currentText.includes('ago')) {
+                    const relativeTime = getRelativeTimeString(new Date(fullTimestamp));
+                    
+                    // Keep the icon and add the relative time
+                    const iconElement = badge.querySelector('i');
+                    if (iconElement) {
+                        badge.innerHTML = '';
+                        badge.appendChild(iconElement);
+                        badge.innerHTML += ' ' + relativeTime;
+                    } else {
+                        badge.textContent = relativeTime;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Convert a date to a relative time string (e.g. "5 minutes ago")
+    function getRelativeTimeString(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSec = Math.round(diffMs / 1000);
+        const diffMin = Math.round(diffSec / 60);
+        const diffHr = Math.round(diffMin / 60);
+        const diffDays = Math.round(diffHr / 24);
+        const diffWeeks = Math.round(diffDays / 7);
+        const diffMonths = Math.round(diffDays / 30);
+        const diffYears = Math.round(diffDays / 365);
+        
+        if (diffSec < 60) {
+            return diffSec + 's ago';
+        } else if (diffMin < 60) {
+            return diffMin + 'm ago';
+        } else if (diffHr < 24) {
+            return diffHr + 'h ago';
+        } else if (diffDays < 7) {
+            return diffDays + 'd ago';
+        } else if (diffWeeks < 4) {
+            return diffWeeks + 'w ago';
+        } else if (diffMonths < 12) {
+            return diffMonths + 'mo ago';
+        } else {
+            return diffYears + 'y ago';
+        }
+    }
+    
+    // Setup prompt search and sort functionality
+    function setupPromptSearch() {
+        const promptSearch = document.getElementById('promptSearch');
+        const promptSearchButton = document.getElementById('promptSearchButton');
+        const promptsList = document.getElementById('promptsList');
+        const sortOptions = document.querySelectorAll('[data-sort]');
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        
+        // Store original prompt cards for filtering
+        const originalPromptCards = Array.from(promptsList.querySelectorAll('.col'));
+        
+        // Current filter and search state
+        let currentFilter = 'all';
+        let currentSearchTerm = '';
+        
+        // Search function
+        function searchPrompts() {
+            currentSearchTerm = promptSearch.value.toLowerCase().trim();
+            applyFiltersAndSearch();
+        }
+        
+        // Filter function
+        function filterPrompts(filter) {
+            currentFilter = filter;
+            applyFiltersAndSearch();
+        }
+        
+        // Apply both filters and search
+        function applyFiltersAndSearch() {
+            let visibleCount = 0;
+            
+            originalPromptCards.forEach(card => {
+                const promptTitle = card.querySelector('.card-title').textContent.toLowerCase();
+                const promptDescription = card.querySelector('.card-text') ? 
+                    card.querySelector('.card-text').textContent.toLowerCase() : '';
+                const promptBadges = Array.from(card.querySelectorAll('.badge'))
+                    .map(badge => badge.textContent.toLowerCase())
+                    .join(' ');
+                
+                const matchesSearch = promptTitle.includes(currentSearchTerm) || 
+                                     promptDescription.includes(currentSearchTerm) ||
+                                     promptBadges.includes(currentSearchTerm);
+                
+                const isEnabled = card.querySelector('.badge').classList.contains('bg-success');
+                const matchesFilter = (currentFilter === 'all') || 
+                                     (currentFilter === 'enabled' && isEnabled) || 
+                                     (currentFilter === 'disabled' && !isEnabled);
+                
+                const isVisible = matchesSearch && matchesFilter;
+                
+                // Toggle visibility
+                card.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+            
+            // Show empty state if no results
+            if (visibleCount === 0) {
+                if (!document.getElementById('no-results')) {
+                    const noResults = document.createElement('div');
+                    noResults.id = 'no-results';
+                    noResults.className = 'col-12 text-center py-5';
+                    
+                    let message = '';
+                    if (currentSearchTerm !== '') {
+                        message = `No prompts found matching "${currentSearchTerm}"`;
+                        if (currentFilter !== 'all') {
+                            message += ` with filter "${currentFilter}"`;
+                        }
+                    } else {
+                        message = `No ${currentFilter !== 'all' ? currentFilter : ''} prompts found`;
+                    }
+                    
+                    noResults.innerHTML = `
+                        <p class="text-muted">${message}</p>
+                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                            <i class="bi bi-x-circle me-1"></i> Clear Filters
+                        </button>
+                    `;
+                    promptsList.appendChild(noResults);
+                }
+            } else {
+                const noResults = document.getElementById('no-results');
+                if (noResults) {
+                    noResults.remove();
+                }
+            }
+        }
+        
+        // Sort function
+        function sortPrompts(sortBy) {
+            const cards = Array.from(originalPromptCards).filter(card => 
+                card.style.display !== 'none'
+            );
+            
+            cards.sort((a, b) => {
+                const titleA = a.querySelector('.card-title').textContent;
+                const titleB = b.querySelector('.card-title').textContent;
+                const dateA = a.querySelector('.date-badge').getAttribute('title').replace('Created: ', '');
+                const dateB = b.querySelector('.date-badge').getAttribute('title').replace('Created: ', '');
+                
+                // Get version numbers for version sorting
+                const versionTextA = a.querySelector('.badge.bg-primary').textContent;
+                const versionTextB = b.querySelector('.badge.bg-primary').textContent;
+                const versionA = parseFloat(versionTextA.replace('v', ''));
+                const versionB = parseFloat(versionTextB.replace('v', ''));
+                
+                if (sortBy === 'name-asc') {
+                    return titleA.localeCompare(titleB);
+                } else if (sortBy === 'name-desc') {
+                    return titleB.localeCompare(titleA);
+                } else if (sortBy === 'created-asc') {
+                    return new Date(dateA) - new Date(dateB);
+                } else if (sortBy === 'created-desc') {
+                    return new Date(dateB) - new Date(dateA);
+                } else if (sortBy === 'version-desc') {
+                    return versionB - versionA;
+                }
+                return 0;
+            });
+            
+            // Reorder in the DOM
+            cards.forEach(card => {
+                promptsList.appendChild(card);
+            });
+        }
+        
+        // Clear search and filters
+        window.clearFilters = function() {
+            // Reset search
+            promptSearch.value = '';
+            currentSearchTerm = '';
+            
+            // Reset filter buttons
+            filterButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-filter') === 'all');
+            });
+            currentFilter = 'all';
+            
+            // Reset card visibility
+            originalPromptCards.forEach(card => {
+                card.style.display = '';
+            });
+            
+            // Remove no results message if present
+            const noResults = document.getElementById('no-results');
+            if (noResults) {
+                noResults.remove();
+            }
+            
+            // Reset sort to default (name-asc)
+            sortPrompts('name-asc');
+            
+            // Update active sort option
+            sortOptions.forEach(option => {
+                option.classList.toggle('active', option.getAttribute('data-sort') === 'name-asc');
+            });
+        };
+        
+        // Add event listeners
+        promptSearch.addEventListener('input', searchPrompts);
+        promptSearchButton.addEventListener('click', searchPrompts);
+        promptSearch.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPrompts();
+            }
+        });
+        
+        // Sort event listeners
+        sortOptions.forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Update active class
+                sortOptions.forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Sort prompts
+                sortPrompts(this.getAttribute('data-sort'));
+            });
+        });
+        
+        // Filter event listeners
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active class
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Apply filter
+                filterPrompts(this.getAttribute('data-filter'));
+            });
+        });
+    }
+</script>
+{% endblock %} 

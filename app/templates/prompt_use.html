@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Use {{ prompt.name }} | {{ settings.APP.NAME }}{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/projects/{{ project.id }}/prompts">
+        <i class="bi bi-chevron-right"></i> {{ project.name }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/projects/{{ project.id }}/prompts/{{ prompt.id }}">
+        <i class="bi bi-chevron-right"></i> {{ prompt.name }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="#">
+        <i class="bi bi-chevron-right"></i> Use
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center mb-3">
+    <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back to Prompt
+    </a>
+    <h1 class="mb-0">Use Prompt: {{ prompt.name }}</h1>
+    
+    {% if prompt.versions|length > 1 %}
+    <div class="ms-auto">
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Version {{ prompt.version }} {% if prompt.is_active %}<span class="badge bg-success ms-1">Active</span>{% endif %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% for version in prompt.versions %}
+                <li>
+                    <a class="dropdown-item {% if version.version == prompt.version %}active{% endif %}" 
+                       href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/use?version={{ version.version }}">
+                        Version {{ version.version }}
+                        {% if version.is_active %}
+                        <span class="badge bg-success ms-1">Active</span>
+                        {% endif %}
+                        <div class="small text-muted">
+                            {{ version.updated_at or version.created_at }} by {{ version.updated_by or version.created_by }}
+                        </div>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if prompt.versions|length > 1 and not prompt.is_active %}
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle me-2"></i> You're using version {{ prompt.version }} of this prompt. This is not the active version.
+    <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/set-active?version={{ prompt.version }}">Set as active</a>
+</div>
+{% endif %}
+
+<div class="content-container">
+    {% if prompt.variables %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-braces me-2"></i> Fill in Variables</h5>
+        </div>
+        <div class="card-body">
+            <form id="variableForm" method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
+                {% for variable in prompt.variables %}
+                <div class="mb-3">
+                    <label for="{{ variable }}" class="form-label fw-semibold">{{ variable }}</label>
+                    <input type="text" class="form-control" id="{{ variable }}" name="var_{{ variable }}" 
+                           value="{{ var_values[variable] if var_values and variable in var_values else '' }}" required>
+                </div>
+                {% endfor %}
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-lightning-fill me-1"></i> Generate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle me-2"></i> This prompt doesn't have any variables to fill in.
+    </div>
+    <div class="d-grid gap-2 mb-4">
+        <form method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-lightning-fill me-1"></i> Generate
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <h5 class="mb-3">
+                <i class="bi bi-gear me-2"></i> System Prompt
+                {% if prompt.variables|length > 0 %}
+                <span class="badge bg-secondary ms-2">Contains Variables</span>
+                {% endif %}
+            </h5>
+            <div class="prompt-section mb-4">{{ prompt.system_prompt }}</div>
+        </div>
+        
+        <div class="col-md-6">
+            <h5 class="mb-3">
+                <i class="bi bi-chat-left-text me-2"></i> User Prompt
+                {% if prompt.variables|length > 0 %}
+                <span class="badge bg-secondary ms-2">Contains Variables</span>
+                {% endif %}
+            </h5>
+            <div class="prompt-section mb-4">{{ prompt.user_prompt }}</div>
+        </div>
+    </div>
+    
+    {% if prompt.generated_system or prompt.generated_user %}
+    <hr class="my-4">
+    
+    <h4 class="mb-3"><i class="bi bi-code-slash me-2"></i> Generated Prompts</h4>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h5 class="mb-3">
+                <i class="bi bi-gear me-2"></i> System Prompt (with Variables)
+            </h5>
+            <div class="prompt-section mb-4">{{ prompt.generated_system }}</div>
+        </div>
+        
+        <div class="col-md-6">
+            <h5 class="mb-3">
+                <i class="bi bi-chat-left-text me-2"></i> User Prompt (with Variables)
+            </h5>
+            <div class="prompt-section mb-4">{{ prompt.generated_user }}</div>
+        </div>
+    </div>
+    
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+        <button class="btn btn-outline-primary" onclick="copyToClipboard('system')">
+            <i class="bi bi-clipboard me-1"></i> Copy System
+        </button>
+        <button class="btn btn-outline-primary" onclick="copyToClipboard('user')">
+            <i class="bi bi-clipboard me-1"></i> Copy User
+        </button>
+        <button class="btn btn-primary" onclick="copyToClipboard('both')">
+            <i class="bi bi-clipboard-check me-1"></i> Copy Both
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyToClipboard(type) {
+        let textToCopy = '';
+        
+        if (type === 'system' || type === 'both') {
+            textToCopy += "System Prompt:\n" + document.querySelectorAll('.prompt-section')[type === 'both' ? 2 : 0].textContent + "\n\n";
+        }
+        
+        if (type === 'user' || type === 'both') {
+            textToCopy += "User Prompt:\n" + document.querySelectorAll('.prompt-section')[type === 'both' ? 3 : 1].textContent;
+        }
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert('Copied to clipboard!');
+        });
+    }
+</script>
+{% endblock %} 

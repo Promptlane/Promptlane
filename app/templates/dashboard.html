@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <!-- Welcome Section -->
+  <section class="dashboard-welcome">
+    <div class="welcome-content">
+      <h1>Welcome, {{ user.username }}</h1>
+      <p>Here's an overview of your {{ settings.APP.NAME }} activity</p>
+    </div>
+  </section>
+
+  <!-- Stats Overview Section -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="bi bi-folder"></i>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-value" id="project-count">{{ stats.total_projects }}</h3>
+          <p class="stat-label">Projects</p>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="bi bi-file-earmark-text"></i>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-value" id="prompt-count">{{ stats.total_prompts }}</h3>
+          <p class="stat-label">Prompts</p>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="bi bi-people"></i>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-value" id="team-count">{{ stats.total_teams }}</h3>
+          <p class="stat-label">Teams</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="dashboard-content">
+    <!-- Projects Section -->
+    <section class="dashboard-section" id="projects-section">
+      <div class="section-header">
+        <h2><i class="bi bi-folder me-2"></i>Your Projects</h2>
+        <a href="/projects" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div id="projects-list" class="section-content"></div>
+    </section>
+
+    <!-- Prompts Section -->
+    <section class="dashboard-section" id="prompts-section">
+      <div class="section-header">
+        <h2><i class="bi bi-file-earmark-text me-2"></i>Recent Prompts</h2>
+        <a href="/prompts" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div id="prompts-list" class="section-content"></div>
+    </section>
+
+    <!-- Teams Section -->
+    <section class="dashboard-section" id="teams-section">
+      <div class="section-header">
+        <h2><i class="bi bi-people me-2"></i>Your Teams</h2>
+        <a href="/teams" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div id="teams-list" class="section-content"></div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+{% endblock %} 

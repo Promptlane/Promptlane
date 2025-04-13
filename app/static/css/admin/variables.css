@@ -1,0 +1,51 @@
+/* PromptLane Admin Interface Variables */
+
+:root {
+  --admin-primary: #1a3a6e;
+  --admin-secondary: #17a2b8;
+  --admin-accent: #fd7e14;
+  --admin-success: #28a745;
+  --admin-danger: #dc3545;
+  --admin-warning: #ffc107;
+  --admin-info: #0dcaf0;
+  --admin-light: #f8f9fa;
+  --admin-dark: #343a40;
+  --admin-gray: #6c757d;
+
+  --admin-sidebar-width: 260px;
+  --admin-header-height: 60px;
+  --admin-content-padding: 1.5rem;
+  
+  --admin-transition: all 0.3s ease;
+  --admin-border-radius: 0.375rem;
+  --admin-box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --admin-card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  
+  /* Modern UI variables */
+  --primary-color: #4361ee;
+  --secondary-color: #3f37c9;
+  --accent-color: #4cc9f0;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --danger-color: #f44336;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 70px;
+  --header-height: 60px;
+  --transition-speed: 0.3s;
+  
+  --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  --box-shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.1);
+  --border-radius: 8px;
+} 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A6CF7" />
+      <stop offset="100%" stop-color="#9439FF" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Command prompt symbol -->
+  <rect x="10" y="15" width="40" height="30" rx="4" fill="url(#logoGradient)" />
+  <polyline points="18,30 25,37 35,25" stroke="white" stroke-width="2.5" fill="none" />
+  
+  <!-- Text: PromptHub -->
+  <text x="60" y="38" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#333333">
+    <tspan fill="#4A6CF7">Prompt</tspan><tspan fill="#9439FF">Hub</tspan>
+  </text>
+</svg> 

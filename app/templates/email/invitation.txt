@@ -1,0 +1,24 @@
+{{settings.APP.NAME}} INVITATION
+====================
+
+Hello {{ recipient_name }},
+
+You have been invited by {{ inviter_name }} to join {{settings.APP.NAME}} as a {{ account_type }}.
+
+{% if personal_message %}
+PERSONAL MESSAGE:
+{{ personal_message }}
+{% endif %}
+
+To complete your registration, please use the following link:
+{{ invitation_url }}
+
+IMPORTANT: This invitation will expire on {{ expiry_date }}.
+
+If you did not expect this invitation, please ignore this email.
+
+--
+Best regards,
+The {{settings.APP.NAME}} Team
+
+© {{ current_year }} {{settings.APP.NAME}}. All rights reserved. 

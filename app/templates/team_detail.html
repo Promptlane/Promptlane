@@ -1,0 +1,735 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} - Team - {{settings.APP.NAME}}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/teams">Teams</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ team.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Team Info -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="card-title mb-0">{{ team.name }}</h4>
+                        {% if permissions.can_edit %}
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTeamModal">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small">Created by {{ team.created_by }} on {{ team.created_at.strftime('%b %d, %Y') }}</p>
+                    <p class="card-text">{{ team.description or "No description provided." }}</p>
+
+                    <div class="d-flex mt-3">
+                        <div class="me-4">
+                            <div class="text-primary fw-bold">{{ members|length }}</div>
+                            <div class="text-muted small">Members</div>
+                        </div>
+                        <div>
+                            <div class="text-primary fw-bold">{{ projects|length }}</div>
+                            <div class="text-muted small">Projects</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    {% if permissions.can_delete %}
+                    <button class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteTeamModal">
+                        <i class="bi bi-trash me-1"></i> Delete Team
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Members Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i> Team Members</h5>
+                    {% if permissions.can_manage_members %}
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        <i class="bi bi-person-plus-fill me-1"></i> Add Member
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                    {% if permissions.can_manage_members %}
+                                    <th class="text-end">Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in members %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar bg-light text-primary rounded-circle me-2">
+                                                {{ member.username[0] | upper }}
+                                            </div>
+                                            <div>
+                                                <div>{{ member.username }}</div>
+                                                <div class="small text-muted">{{ member.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'primary' if member.role == 'owner' else 'success' if member.role == 'admin' else 'info' if member.role == 'editor' else 'secondary' }}">
+                                            {{ member.role }}
+                                        </span>
+                                    </td>
+                                    <td>{{ member.created_at.strftime('%b %d, %Y') }}</td>
+                                    {% if permissions.can_manage_members %}
+                                    <td class="text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <button class="dropdown-item" onclick="openEditRoleModal('{{ member.user_id }}', '{{ member.username }}', '{{ member.role }}')">
+                                                        <i class="bi bi-pencil me-2"></i> Edit Role
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item text-danger" onclick="openRemoveMemberModal('{{ member.user_id }}', '{{ member.username }}')">
+                                                        <i class="bi bi-person-x me-2"></i> Remove
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Section -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-folder-fill me-2"></i> Team Projects</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#addExistingProjectModal">
+                            <i class="bi bi-folder-symlink me-1"></i> Add Existing Project
+                        </button>
+                        <a href="/projects/create?team_id={{ team.id }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> New Project
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if not projects %}
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="bi bi-folder2-open text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="mb-3">No Projects Yet</h5>
+                        <p class="mb-4">This team doesn't have any projects yet.</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addExistingProjectModal">
+                                <i class="bi bi-folder-symlink me-1"></i> Add Existing Project
+                            </button>
+                            <a href="/projects/create?team_id={{ team.id }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Create New Project
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="list-group">
+                        {% for project in projects %}
+                        <a href="/projects/{{ project.id }}/prompts" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">{{ project.name }}</h5>
+                                    <p class="mb-1 text-muted">{{ project.key }}</p>
+                                    <small>{{ project.description|truncate(100) if project.description else "No description" }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-primary fw-bold">{{ project.prompt_count }}</div>
+                                    <small class="text-muted">Prompts</small>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Edit Team Modal -->
+<div class="modal fade" id="editTeamModal" tabindex="-1" aria-labelledby="editTeamModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTeamModalLabel">Edit Team</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTeamForm">
+                    <div class="mb-3">
+                        <label for="editTeamName" class="form-label">Team Name</label>
+                        <input type="text" class="form-control" id="editTeamName" name="name" value="{{ team.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTeamDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editTeamDescription" name="description" rows="3">{{ team.description }}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateTeamButton">
+                    <i class="bi bi-check-circle me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMemberModalLabel">Add Team Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="searchUser" class="form-label">Search User</label>
+                    <input type="text" class="form-control" id="searchUser" placeholder="Enter username or email">
+                    <div class="form-text">Type at least 2 characters to search</div>
+                </div>
+                
+                <div id="searchResults" class="list-group mb-3 d-none">
+                    <!-- Search results will be displayed here -->
+                </div>
+                
+                <div id="selectedUser" class="card d-none mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title" id="selectedUsername"></h6>
+                        <p class="card-text small" id="selectedEmail"></p>
+                        <input type="hidden" id="selectedUserId">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="memberRole" class="form-label">Role</label>
+                    <select class="form-select" id="memberRole">
+                        <option value="viewer">Viewer</option>
+                        <option value="editor">Editor</option>
+                        <option value="admin">Admin</option>
+                        {% if permissions.role == 'owner' %}
+                        <option value="owner">Owner</option>
+                        {% endif %}
+                    </select>
+                    <div class="form-text">Select the permission level for this user</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="addMemberButton" disabled>
+                    <i class="bi bi-person-plus-fill me-1"></i> Add Member
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-labelledby="editRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRoleModalLabel">Edit Member Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Update role for <strong id="editRoleUsername"></strong></p>
+                <input type="hidden" id="editRoleUserId">
+                
+                <div class="mb-3">
+                    <label for="editRole" class="form-label">Role</label>
+                    <select class="form-select" id="editRole">
+                        <option value="viewer">Viewer</option>
+                        <option value="editor">Editor</option>
+                        <option value="admin">Admin</option>
+                        {% if permissions.role == 'owner' %}
+                        <option value="owner">Owner</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateRoleButton">
+                    <i class="bi bi-check-circle me-1"></i> Update Role
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Member Modal -->
+<div class="modal fade" id="removeMemberModal" tabindex="-1" aria-labelledby="removeMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeMemberModalLabel">Remove Team Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove <strong id="removeMemberUsername"></strong> from this team?</p>
+                <input type="hidden" id="removeMemberUserId">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    This action cannot be undone. The user will lose access to all team projects.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveButton">
+                    <i class="bi bi-person-x me-1"></i> Remove Member
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Team Modal -->
+<div class="modal fade" id="deleteTeamModal" tabindex="-1" aria-labelledby="deleteTeamModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTeamModalLabel">Delete Team</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the team <strong>{{ team.name }}</strong>?</p>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    This action cannot be undone. All team memberships will be removed.
+                    <br><br>
+                    <strong>Projects in this team will not be deleted</strong>, but they will no longer be associated with this team.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">
+                    <i class="bi bi-trash me-1"></i> Delete Team
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Existing Project Modal -->
+<div class="modal fade" id="addExistingProjectModal" tabindex="-1" aria-labelledby="addExistingProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addExistingProjectModalLabel">Add Existing Project to Team</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="searchProject" class="form-label">Search for Project</label>
+                    <input type="text" class="form-control" id="searchProject" placeholder="Enter project name">
+                    <div class="form-text">Type at least 2 characters to search</div>
+                </div>
+                
+                <div id="projectSearchResults" class="list-group mb-3 d-none">
+                    <!-- Search results will be displayed here -->
+                </div>
+                
+                <div id="selectedProject" class="card d-none mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title" id="selectedProjectName"></h6>
+                        <p class="card-text small" id="selectedProjectDescription"></p>
+                        <input type="hidden" id="selectedProjectId">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="addProjectButton" disabled>
+                    <i class="bi bi-folder-plus me-1"></i> Add to Team
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update team details
+    const updateTeamButton = document.getElementById('updateTeamButton');
+    updateTeamButton.addEventListener('click', async function() {
+        updateTeamButton.disabled = true;
+        updateTeamButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+        
+        try {
+            const formData = {
+                name: document.getElementById('editTeamName').value.trim(),
+                description: document.getElementById('editTeamDescription').value.trim()
+            };
+            
+            const response = await fetch('/api/v1/teams/{{ team.id }}', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.detail || 'Failed to update team'}`);
+            }
+        } catch (error) {
+            console.error('Error updating team:', error);
+            alert('An error occurred while updating the team');
+        } finally {
+            updateTeamButton.disabled = false;
+            updateTeamButton.innerHTML = '<i class="bi bi-check-circle me-1"></i> Save Changes';
+        }
+    });
+    
+    // User search functionality for adding members
+    const searchUserInput = document.getElementById('searchUser');
+    const searchResults = document.getElementById('searchResults');
+    const selectedUser = document.getElementById('selectedUser');
+    const addMemberButton = document.getElementById('addMemberButton');
+    
+    let searchTimeout;
+    searchUserInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.classList.add('d-none');
+            return;
+        }
+        
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/v1/teams/users/search?query=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const users = await response.json();
+                    displaySearchResults(users);
+                }
+            } catch (error) {
+                console.error('Error searching users:', error);
+            }
+        }, 300);
+    });
+    
+    function displaySearchResults(users) {
+        searchResults.innerHTML = '';
+        searchResults.classList.remove('d-none');
+        
+        if (users.length === 0) {
+            searchResults.innerHTML = '<div class="list-group-item">No users found</div>';
+            return;
+        }
+        
+        users.forEach(user => {
+            const item = document.createElement('button');
+            item.className = 'list-group-item list-group-item-action';
+            item.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="avatar bg-light text-primary rounded-circle me-2">
+                        ${user.username[0].toUpperCase()}
+                    </div>
+                    <div>
+                        <div>${user.username}</div>
+                        <small class="text-muted">${user.email}</small>
+                    </div>
+                </div>
+            `;
+            
+            item.addEventListener('click', function() {
+                selectUser(user);
+            });
+            
+            searchResults.appendChild(item);
+        });
+    }
+    
+    function selectUser(user) {
+        document.getElementById('selectedUsername').textContent = user.username;
+        document.getElementById('selectedEmail').textContent = user.email;
+        document.getElementById('selectedUserId').value = user.id;
+        
+        selectedUser.classList.remove('d-none');
+        searchResults.classList.add('d-none');
+        searchUserInput.value = '';
+        addMemberButton.disabled = false;
+    }
+    
+    // Add member to team
+    addMemberButton.addEventListener('click', async function() {
+        const userId = document.getElementById('selectedUserId').value;
+        const role = document.getElementById('memberRole').value;
+        
+        if (!userId) return;
+        
+        addMemberButton.disabled = true;
+        addMemberButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
+        
+        try {
+            const response = await fetch('/api/v1/teams/{{ team.id }}/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, role: role })
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.detail || 'Failed to add member'}`);
+            }
+        } catch (error) {
+            console.error('Error adding member:', error);
+            alert('An error occurred while adding the member');
+        } finally {
+            addMemberButton.disabled = false;
+            addMemberButton.innerHTML = '<i class="bi bi-person-plus-fill me-1"></i> Add Member';
+        }
+    });
+    
+    // Edit member role
+    window.openEditRoleModal = function(userId, username, currentRole) {
+        document.getElementById('editRoleUserId').value = userId;
+        document.getElementById('editRoleUsername').textContent = username;
+        document.getElementById('editRole').value = currentRole;
+        
+        const editRoleModal = new bootstrap.Modal(document.getElementById('editRoleModal'));
+        editRoleModal.show();
+    };
+    
+    const updateRoleButton = document.getElementById('updateRoleButton');
+    updateRoleButton.addEventListener('click', async function() {
+        const userId = document.getElementById('editRoleUserId').value;
+        const role = document.getElementById('editRole').value;
+        
+        updateRoleButton.disabled = true;
+        updateRoleButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Updating...';
+        
+        try {
+            const response = await fetch(`/api/v1/teams/{{ team.id }}/members/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: role })
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.detail || 'Failed to update role'}`);
+            }
+        } catch (error) {
+            console.error('Error updating role:', error);
+            alert('An error occurred while updating the role');
+        } finally {
+            updateRoleButton.disabled = false;
+            updateRoleButton.innerHTML = '<i class="bi bi-check-circle me-1"></i> Update Role';
+        }
+    });
+    
+    // Remove member
+    window.openRemoveMemberModal = function(userId, username) {
+        document.getElementById('removeMemberUserId').value = userId;
+        document.getElementById('removeMemberUsername').textContent = username;
+        
+        const removeMemberModal = new bootstrap.Modal(document.getElementById('removeMemberModal'));
+        removeMemberModal.show();
+    };
+    
+    const confirmRemoveButton = document.getElementById('confirmRemoveButton');
+    confirmRemoveButton.addEventListener('click', async function() {
+        const userId = document.getElementById('removeMemberUserId').value;
+        
+        confirmRemoveButton.disabled = true;
+        confirmRemoveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Removing...';
+        
+        try {
+            const response = await fetch(`/api/v1/teams/{{ team.id }}/members/${userId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.detail || 'Failed to remove member'}`);
+            }
+        } catch (error) {
+            console.error('Error removing member:', error);
+            alert('An error occurred while removing the member');
+        } finally {
+            confirmRemoveButton.disabled = false;
+            confirmRemoveButton.innerHTML = '<i class="bi bi-person-x me-1"></i> Remove Member';
+        }
+    });
+    
+    // Delete team
+    const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+    confirmDeleteButton.addEventListener('click', async function() {
+        confirmDeleteButton.disabled = true;
+        confirmDeleteButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
+        
+        try {
+            const response = await fetch('/api/v1/teams/{{ team.id }}', {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                window.location.href = '/teams';
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.detail || 'Failed to delete team'}`);
+            }
+        } catch (error) {
+            console.error('Error deleting team:', error);
+            alert('An error occurred while deleting the team');
+        } finally {
+            confirmDeleteButton.disabled = false;
+            confirmDeleteButton.innerHTML = '<i class="bi bi-trash me-1"></i> Delete Team';
+        }
+    });
+
+    // Project search functionality for adding existing projects
+    const searchProjectInput = document.getElementById('searchProject');
+    const projectSearchResults = document.getElementById('projectSearchResults');
+    const selectedProject = document.getElementById('selectedProject');
+    const addProjectButton = document.getElementById('addProjectButton');
+    
+    let projectSearchTimeout;
+    searchProjectInput.addEventListener('input', function() {
+        clearTimeout(projectSearchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            projectSearchResults.classList.add('d-none');
+            return;
+        }
+        
+        projectSearchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/projects/search?query=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const projects = await response.json();
+                    displayProjectSearchResults(projects);
+                }
+            } catch (error) {
+                console.error('Error searching projects:', error);
+            }
+        }, 300);
+    });
+    
+    function displayProjectSearchResults(projects) {
+        projectSearchResults.innerHTML = '';
+        projectSearchResults.classList.remove('d-none');
+        
+        if (projects.length === 0) {
+            projectSearchResults.innerHTML = '<div class="list-group-item">No projects found</div>';
+            return;
+        }
+        
+        projects.forEach(project => {
+            const item = document.createElement('button');
+            item.className = 'list-group-item list-group-item-action';
+            item.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="me-2">
+                        <i class="bi bi-folder text-primary"></i>
+                    </div>
+                    <div>
+                        <div>${project.name}</div>
+                        <small class="text-muted">${project.description || 'No description'}</small>
+                    </div>
+                </div>
+            `;
+            
+            item.addEventListener('click', function() {
+                selectProject(project);
+            });
+            
+            projectSearchResults.appendChild(item);
+        });
+    }
+    
+    function selectProject(project) {
+        document.getElementById('selectedProjectName').textContent = project.name;
+        document.getElementById('selectedProjectDescription').textContent = project.description || 'No description';
+        document.getElementById('selectedProjectId').value = project.id;
+        
+        selectedProject.classList.remove('d-none');
+        projectSearchResults.classList.add('d-none');
+        searchProjectInput.value = '';
+        addProjectButton.disabled = false;
+    }
+    
+    // Add project to team
+    addProjectButton.addEventListener('click', async function() {
+        const projectId = document.getElementById('selectedProjectId').value;
+        
+        if (!projectId) return;
+        
+        addProjectButton.disabled = true;
+        addProjectButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
+        
+        try {
+            const response = await fetch('/api/teams/{{ team.id }}/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_id: projectId })
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.detail || 'Failed to add project'}`);
+            }
+        } catch (error) {
+            console.error('Error adding project:', error);
+            alert('An error occurred while adding the project');
+        } finally {
+            addProjectButton.disabled = false;
+            addProjectButton.innerHTML = '<i class="bi bi-folder-plus me-1"></i> Add to Team';
+        }
+    });
+});
+</script>
+{% endblock %} 

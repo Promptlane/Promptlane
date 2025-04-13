@@ -1,0 +1,92 @@
+/* Prompt version comparison styles */
+
+/* Comparison styling */
+.highlight-changes ins {
+    background-color: #d1ffd1;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.highlight-changes del {
+    background-color: #ffd1d1;
+    text-decoration: line-through;
+    display: inline-block;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+#comparisonResult {
+    display: none;
+}
+
+.comparison-container {
+    overflow-x: auto;
+}
+
+.prompt-section {
+    white-space: pre-wrap;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #3b82f6;
+    border-radius: 50%;
+    animation: spinner 1s linear infinite;
+}
+
+@keyframes spinner {
+    to {transform: rotate(360deg);}
+}
+
+/* Version selector styles */
+.version-selector-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.swap-versions-button {
+    height: 38px;
+    width: 38px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Version cards */
+.version-card {
+    height: 100%;
+    transition: all 0.2s ease;
+}
+
+.version-card:hover {
+    box-shadow: var(--card-shadow-hover);
+}
+
+.version-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Active version styling */
+.set-active-button {
+    margin-top: 1rem;
+    transition: all 0.2s ease;
+}
+
+.set-active-button:hover {
+    transform: translateY(-2px);
+} 

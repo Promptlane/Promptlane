@@ -1,0 +1,625 @@
+{% extends "base.html" %}
+
+{% block title %}{{ prompt.name }} | {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/compare.css">
+{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/projects/{{ project.id }}">
+        <i class="bi bi-chevron-right"></i> {{ project.name }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="/projects/{{ project.id }}/prompts/{{ prompt.id }}">
+        <i class="bi bi-chevron-right"></i> {{ prompt.name }}
+    </a>
+</li>
+{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="/projects">Projects</a></li>
+    <li class="breadcrumb-item"><a href="/projects/{{ project.id }}">{{ project.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ prompt.name }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <div class="d-flex align-items-center mb-2">
+            <a href="/projects/{{ project.id }}" class="btn btn-sm btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i> Back to Project
+            </a>
+            <h1 class="mb-0">{{ prompt.name }}</h1>
+        </div>
+        <p class="page-subtitle">
+            Created {{ prompt.created_at }} by {{ prompt.created_by }}
+            {% if prompt.updated_by %}
+            • Updated {{ prompt.updated_at }} by {{ prompt.updated_by }}
+            {% endif %}
+        </p>
+    </div>
+    <div class="d-flex align-items-center">
+        <!-- Enable/Disable toggle -->
+        <div class="form-check form-switch me-3">
+            <form method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/toggle-enabled" id="toggleForm">
+                <div class="d-flex align-items-center">
+                    <input class="form-check-input me-2" type="checkbox" role="switch" id="promptEnabledToggle" 
+                           {% if prompt.enabled|default(true) %}checked{% endif %}
+                           onchange="document.getElementById('toggleForm').submit()">
+                    <label class="form-check-label" for="promptEnabledToggle">
+                        {% if prompt.enabled|default(true) %}
+                            <span class="badge bg-success">Enabled</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Disabled</span>
+                        {% endif %}
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="btn-group">
+            <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/use" class="btn btn-primary">
+                <i class="bi bi-play-fill"></i> Use Prompt
+            </a>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePromptModal">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+</div>
+{% endif %}
+
+{% if message %}
+<div class="alert alert-success">
+    <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
+</div>
+{% endif %}
+
+<div class="content-container">
+    <ul class="nav nav-tabs mb-4" id="promptTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-tab-pane" type="button" role="tab" aria-controls="view-tab-pane" aria-selected="true">
+                <i class="bi bi-eye me-1"></i> View
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-tab-pane" type="button" role="tab" aria-controls="edit-tab-pane" aria-selected="false">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </button>
+        </li>
+        {% if prompt.versions|length > 1 %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="compare-tab" data-bs-toggle="tab" data-bs-target="#compare-tab-pane" type="button" role="tab" aria-controls="compare-tab-pane" aria-selected="false">
+                <i class="bi bi-columns-gap me-1"></i> Compare Versions
+            </button>
+        </li>
+        {% endif %}
+    </ul>
+    
+    <div class="tab-content" id="promptTabsContent">
+        <div class="tab-pane fade show active" id="view-tab-pane" role="tabpanel" aria-labelledby="view-tab" tabindex="0">
+            <!-- View Mode -->
+            {% if prompt.versions|length > 1 %}
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Version History</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Version {{ prompt.version }} <span class="badge bg-success ms-1">Active</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for version in prompt.versions %}
+                            <li>
+                                <a class="dropdown-item {% if version.version == prompt.version %}active{% endif %}" 
+                                   href="/projects/{{ project.id }}/prompts/{{ prompt.id }}?version={{ version.version }}">
+                                    Version {{ version.version }}
+                                    {% if version.version == prompt.version %}
+                                    <span class="badge bg-success ms-1">Active</span>
+                                    {% endif %}
+                                    <div class="small text-muted">
+                                        {{ version.updated_at or version.created_at }} by {{ version.updated_by or version.created_by }}
+                                    </div>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i> You're viewing version {{ prompt.version }} of this prompt. This prompt has {{ prompt.versions|length }} versions.
+                    {% if not prompt.is_active %}
+                    <strong>Note:</strong> This is not the active version. <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/set-active?version={{ prompt.version }}">Set as active</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="mb-4">
+                <h5 class="mb-3">
+                    <i class="bi bi-gear me-2"></i> System Prompt
+                    {% if prompt.variables|length > 0 %}
+                    <span class="badge bg-secondary ms-2">Contains Variables</span>
+                    {% endif %}
+                </h5>
+                <div class="prompt-section">{{ prompt.system_prompt }}</div>
+            </div>
+            
+            <div class="mb-4">
+                <h5 class="mb-3">
+                    <i class="bi bi-chat-left-text me-2"></i> User Prompt
+                    {% if prompt.variables|length > 0 %}
+                    <span class="badge bg-secondary ms-2">Contains Variables</span>
+                    {% endif %}
+                </h5>
+                <div class="prompt-section">{{ prompt.user_prompt }}</div>
+            </div>
+            
+            {% if prompt.variables|length > 0 %}
+            <div class="mb-4">
+                <h5 class="mb-3">
+                    <i class="bi bi-braces me-2"></i> Variables
+                </h5>
+                <div class="d-flex flex-wrap">
+                    {% for variable in prompt.variables %}
+                    <span class="badge-variable">{{ variable }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="tab-pane fade" id="edit-tab-pane" role="tabpanel" aria-labelledby="edit-tab" tabindex="0">
+            <!-- Edit Mode -->
+            <form method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Prompt Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ prompt.name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="system_prompt" class="form-label">System Prompt</label>
+                    <textarea class="form-control" id="system_prompt" name="system_prompt" rows="5" required>{{ prompt.system_prompt }}</textarea>
+                    <div class="form-text">Instructions that define the AI assistant's behavior, capabilities, and limitations.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="user_prompt" class="form-label">User Prompt</label>
+                    <textarea class="form-control" id="user_prompt" name="user_prompt" rows="10" required>{{ prompt.user_prompt }}</textarea>
+                    <div class="form-text">The actual prompt that will be sent. Use {{variable_name}} syntax for variables.</div>
+                </div>
+                
+                <div class="mb-4 border rounded p-3 bg-light">
+                    <h6 class="mb-3"><i class="bi bi-clock-history me-2"></i> Version Control</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="version_action" id="updateExisting" value="update" checked>
+                        <label class="form-check-label" for="updateExisting">
+                            Update existing prompt (version {{ prompt.version }})
+                        </label>
+                        <div class="text-muted small ms-4">
+                            Overwrites the current version. Anyone using this prompt will immediately get the updated version.
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="version_action" id="createNew" value="new_version">
+                        <label class="form-check-label" for="createNew">
+                            Create new version (version {{ prompt.version + 1 }})
+                        </label>
+                        <div class="text-muted small ms-4">
+                            Creates a new version while keeping the original. You can switch between versions.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="tab" data-bs-target="#view-tab-pane">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        {% if prompt.versions|length > 1 %}
+        <div class="tab-pane fade" id="compare-tab-pane" role="tabpanel" aria-labelledby="compare-tab" tabindex="0">
+            <!-- Compare Mode -->
+            <div class="mb-4">
+                <h5 class="mb-3"><i class="bi bi-columns-gap me-2"></i> Compare Versions</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-md-5">
+                        <label for="version1" class="form-label">Version 1</label>
+                        <select class="form-select" id="version1">
+                            {% for version in prompt.versions %}
+                            <option value="{{ version.version }}" {% if version.version == prompt.version %}selected{% endif %}>
+                                Version {{ version.version }} 
+                                {% if version.is_active %}(Active){% endif %}
+                                - {{ version.updated_at or version.created_at }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end justify-content-center">
+                        <div class="d-none d-md-block">
+                            <button type="button" class="btn btn-outline-secondary" id="swapVersionsBtn">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="version2" class="form-label">Version 2</label>
+                        <select class="form-select" id="version2">
+                            {% for version in prompt.versions %}
+                            <option value="{{ version.version }}" {% if version.version == prompt.versions[-1].version and prompt.version != prompt.versions[-1].version %}selected{% elif loop.first and prompt.version == prompt.versions[-1].version %}selected{% endif %}>
+                                Version {{ version.version }} 
+                                {% if version.is_active %}(Active){% endif %}
+                                - {{ version.updated_at or version.created_at }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-4">
+                    <button type="button" class="btn btn-primary" id="compareBtn">
+                        <i class="bi bi-columns-gap me-1"></i> Compare
+                    </button>
+                </div>
+            </div>
+
+            <div id="comparisonResult" class="mt-4" style="display: none;">
+                <div class="comparison-container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span id="version1Title">Version <span id="v1Num"></span></span>
+                                    <span id="version1Badge" class="badge bg-success">Active</span>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="mb-2">System Prompt</h6>
+                                    <div id="version1System" class="prompt-section mb-4"></div>
+                                    
+                                    <h6 class="mb-2">User Prompt</h6>
+                                    <div id="version1User" class="prompt-section"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span id="version2Title">Version <span id="v2Num"></span></span>
+                                    <span id="version2Badge" class="badge bg-secondary d-none">Active</span>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="mb-2">System Prompt</h6>
+                                    <div id="version2System" class="prompt-section highlight-changes mb-4"></div>
+                                    
+                                    <h6 class="mb-2">User Prompt</h6>
+                                    <div id="version2User" class="prompt-section highlight-changes"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-center">
+                    <a href="#" id="setActiveBtn" class="btn btn-sm btn-outline-primary">Set Version <span id="setActiveVersion"></span> as Active</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Delete Prompt Modal -->
+<div class="modal fade" id="deletePromptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Prompt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the prompt "{{ prompt.name }}"?</p>
+                <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/delete">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Confirmation Modal -->
+<div class="modal fade" id="updateConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Prompt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Important:</strong> You're about to update this prompt.
+                </div>
+                
+                <p>Please choose how you want to handle this update:</p>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="modalVersionAction" id="modalUpdateExisting" value="update" checked>
+                    <label class="form-check-label" for="modalUpdateExisting">
+                        <strong>Update existing prompt (version {{ prompt.version }})</strong>
+                    </label>
+                    <div class="text-muted small ms-4">
+                        This will change the prompt for everyone. Any projects using this prompt will immediately use the updated version.
+                    </div>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="modalVersionAction" id="modalCreateNew" value="new_version">
+                    <label class="form-check-label" for="modalCreateNew">
+                        <strong>Create new version (version {{ prompt.version + 1 }})</strong>
+                    </label>
+                    <div class="text-muted small ms-4">
+                        This will create a new version while preserving the original. You can switch between versions.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmUpdateBtn">
+                    <i class="bi bi-save me-1"></i> Continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Include jQuery if not already loaded -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<!-- Include diff library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/4.0.2/diff.min.js"></script>
+
+<!-- jQuery-based version comparison script -->
+<script>
+(function($) {
+    // Wait for document ready
+    $(function() {
+        console.log("jQuery document ready");
+        
+        // Get version data from template
+        var promptVersions;
+        try {
+            promptVersions = JSON.parse('{{ prompt.versions|tojson if prompt.versions else "[]" }}');
+            console.log("Parsed versions:", promptVersions.length);
+        } catch(e) {
+            console.error("Error parsing versions:", e);
+            promptVersions = [];
+        }
+        
+        // Create a map for easy access to version data
+        var versionMap = {};
+        $.each(promptVersions, function(i, version) {
+            versionMap[version.version] = {
+                systemPrompt: version.system_prompt,
+                userPrompt: version.user_prompt,
+                isActive: version.is_active
+            };
+        });
+        
+        // Hide comparison result by default
+        $("#comparisonResult").hide();
+        
+        // Add click handler for compare button
+        $("#compareBtn").on("click", function(e) {
+            e.preventDefault();
+            console.log("Compare button clicked via jQuery");
+            
+            // Get selected versions
+            var v1 = parseInt($("#version1").val());
+            var v2 = parseInt($("#version2").val());
+            
+            if (v1 === v2) {
+                alert("Please select different versions to compare");
+                return false;
+            }
+            
+            // Show comparison
+            compareVersions(v1, v2);
+            return false;
+        });
+        
+        // Add click handler for swap button
+        $("#swapVersionsBtn").on("click", function(e) {
+            e.preventDefault();
+            console.log("Swap button clicked");
+            
+            var v1 = $("#version1").val();
+            var v2 = $("#version2").val();
+            
+            $("#version1").val(v2);
+            $("#version2").val(v1);
+            return false;
+        });
+        
+        // Function to compare two versions
+        function compareVersions(v1, v2) {
+            console.log("Comparing versions:", v1, v2);
+            
+            // Show the comparison result with a loading indicator
+            $("#comparisonResult").html('<div class="text-center p-5"><div class="spinner-border" role="status"></div><p class="mt-3">Comparing versions...</p></div>').show();
+            
+            // Short delay to ensure UI updates
+            setTimeout(function() {
+                // Get version data
+                var v1Data = versionMap[v1] || { systemPrompt: '', userPrompt: '' };
+                var v2Data = versionMap[v2] || { systemPrompt: '', userPrompt: '' };
+                
+                // Restore the original HTML structure first
+                $("#comparisonResult").html(`
+                <div class="comparison-container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span id="version1Title">Version <span id="v1Num"></span></span>
+                                    <span id="version1Badge" class="badge bg-success">Active</span>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="mb-2">System Prompt</h6>
+                                    <div id="version1System" class="prompt-section mb-4"></div>
+                                    
+                                    <h6 class="mb-2">User Prompt</h6>
+                                    <div id="version1User" class="prompt-section"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span id="version2Title">Version <span id="v2Num"></span></span>
+                                    <span id="version2Badge" class="badge bg-secondary d-none">Active</span>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="mb-2">System Prompt</h6>
+                                    <div id="version2System" class="prompt-section highlight-changes mb-4"></div>
+                                    
+                                    <h6 class="mb-2">User Prompt</h6>
+                                    <div id="version2User" class="prompt-section highlight-changes"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-center">
+                    <a href="#" id="setActiveBtn" class="btn btn-sm btn-outline-primary">Set Version <span id="setActiveVersion"></span> as Active</a>
+                </div>`);
+                
+                // Update UI with version numbers
+                $("#v1Num").text(v1);
+                $("#v2Num").text(v2);
+                
+                // Display version 1 content
+                $("#version1System").text(v1Data.systemPrompt);
+                $("#version1User").text(v1Data.userPrompt);
+                
+                // Set active badges
+                if (v1Data.isActive) {
+                    $("#version1Badge").removeClass("d-none");
+                } else {
+                    $("#version1Badge").addClass("d-none");
+                }
+                
+                if (v2Data.isActive) {
+                    $("#version2Badge").removeClass("d-none");
+                } else {
+                    $("#version2Badge").addClass("d-none");
+                }
+                
+                try {
+                    // Create diffs if diff library is available
+                    if (typeof Diff !== 'undefined' && typeof Diff.diffWords === 'function') {
+                        // System prompt diff
+                        var systemDiff = Diff.diffWords(v1Data.systemPrompt, v2Data.systemPrompt);
+                        var systemHtml = '';
+                        $.each(systemDiff, function(i, part) {
+                            if (part.added) {
+                                systemHtml += '<ins>' + part.value + '</ins>';
+                            } else if (part.removed) {
+                                systemHtml += '<del>' + part.value + '</del>';
+                            } else {
+                                systemHtml += part.value;
+                            }
+                        });
+                        
+                        // User prompt diff
+                        var userDiff = Diff.diffWords(v1Data.userPrompt, v2Data.userPrompt);
+                        var userHtml = '';
+                        $.each(userDiff, function(i, part) {
+                            if (part.added) {
+                                userHtml += '<ins>' + part.value + '</ins>';
+                            } else if (part.removed) {
+                                userHtml += '<del>' + part.value + '</del>';
+                            } else {
+                                userHtml += part.value;
+                            }
+                        });
+                        
+                        // Display diff results
+                        $("#version2System").html(systemHtml);
+                        $("#version2User").html(userHtml);
+                    } else {
+                        console.warn("Diff library not available, showing plain text");
+                        // Fallback to plain text
+                        $("#version2System").text(v2Data.systemPrompt);
+                        $("#version2User").text(v2Data.userPrompt);
+                    }
+                } catch (diffError) {
+                    console.error("Error creating diff:", diffError);
+                    // Fallback to plain text
+                    $("#version2System").text(v2Data.systemPrompt);
+                    $("#version2User").text(v2Data.userPrompt);
+                }
+                
+                // Set up active version button
+                var setActiveBtn = $("#setActiveBtn");
+                var setActiveVersion = $("#setActiveVersion");
+                
+                if (!v2Data.isActive) {
+                    setActiveVersion.text(v2);
+                    setActiveBtn.attr("href", "/projects/{{ project.id }}/prompts/{{ prompt.id }}/set-active?version=" + v2);
+                    setActiveBtn.removeClass("d-none");
+                } else {
+                    setActiveBtn.addClass("d-none");
+                }
+                
+                console.log("Comparison complete");
+            }, 50);
+        }
+        
+        // Check if we should compare on load (if on compare tab)
+        if (window.location.hash === '#compare-tab-pane' || 
+            (new URLSearchParams(window.location.search).get('tab') === 'compare')) {
+            console.log("Auto-comparing based on URL");
+            
+            // Activate the compare tab
+            $('#compare-tab').tab('show');
+            
+            // Short delay to ensure tab is shown
+            setTimeout(function() {
+                var v1 = parseInt($("#version1").val());
+                var v2 = parseInt($("#version2").val());
+                if (v1 !== v2) {
+                    compareVersions(v1, v2);
+                }
+            }, 200);
+        }
+    });
+})(jQuery); // Pass jQuery to avoid conflicts
+</script>
+{% endblock %} 

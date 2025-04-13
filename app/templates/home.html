@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}{{settings.APP.NAME}} - Internal AI Prompt Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/home.css">
+{% endblock %}
+
+{% block content %}
+<div class="home-hero py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="hero-badge mb-3">Internal Tool</div>
+                <h1 class="display-4 fw-bold mb-3">Your Company's AI Prompt Library</h1>
+                <p class="lead mb-4">Centralize, version, and manage all your team's AI prompts in one secure location. Build consistent AI experiences across all your products and services.</p>
+                <div class="d-grid gap-2 d-md-flex mb-4">
+                    {% if user %}
+                    <a href="/projects" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-collection me-2"></i> My Projects
+                    </a>
+                    <button type="button" class="btn btn-outline-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+                        <i class="bi bi-plus-lg me-2"></i> New Project
+                    </button>
+                    {% else %}
+                    <a href="/login?next=/projects" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                    </a>
+                    <a href="/register" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="bi bi-person-plus me-2"></i> Request Access
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <span class="stat-number">15+</span>
+                        <span class="stat-label">Teams</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="stat-number">230+</span>
+                        <span class="stat-label">Prompts</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="stat-number">40+</span>
+                        <span class="stat-label">Projects</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-image-container">
+                    <img src="/static/img/hero-illustration.svg" alt="AI Prompt Management" class="img-fluid hero-image">
+                    <div class="hero-shape hero-shape-1"></div>
+                    <div class="hero-shape hero-shape-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <span class="section-subtitle">Key Benefits</span>
+            <h2 class="section-title">Streamline Your AI Operations</h2>
+            <p class="section-description">Designed specifically for your internal teams to collaborate efficiently</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h3>Standardize AI Interactions</h3>
+                    <p>Maintain consistent AI responses across all your internal tools and customer-facing applications.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h3>Version Control</h3>
+                    <p>Track all changes to prompts with detailed history, approved versions, and rollback capability.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3>Team Collaboration</h3>
+                    <p>Share prompts across departments with controlled access and approval workflows.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="bi bi-braces"></i>
+                    </div>
+                    <h3>Template Variables</h3>
+                    <p>Create reusable prompts with dynamic variables that adapt to different use cases.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3>Performance Tracking</h3>
+                    <p>Monitor prompt effectiveness and usage metrics across your organization.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="bi bi-code-square"></i>
+                    </div>
+                    <h3>API Integration</h3>
+                    <p>Connect to your internal systems with secure API endpoints for prompt retrieval.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="workflow-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-lg-2">
+                <div class="workflow-content">
+                    <span class="section-subtitle">Getting Started</span>
+                    <h2 class="section-title">Simple Integration Process</h2>
+                    <p class="mb-4">Our platform seamlessly integrates with your existing workflows and tools.</p>
+                    
+                    <div class="workflow-steps">
+                        <div class="workflow-step">
+                            <div class="step-number">01</div>
+                            <div class="step-content">
+                                <h4>Create Project Structure</h4>
+                                <p>Organize prompts by department, product, or use case to maintain clarity.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="workflow-step">
+                            <div class="step-number">02</div>
+                            <div class="step-content">
+                                <h4>Design Prompt Templates</h4>
+                                <p>Build system and user prompts with variables for dynamic content insertion.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="workflow-step">
+                            <div class="step-number">03</div>
+                            <div class="step-content">
+                                <h4>Test & Approve</h4>
+                                <p>Validate prompt performance before publishing to your internal systems.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        {% if user %}
+                        <a href="/projects" class="btn btn-primary">
+                            <i class="bi bi-rocket-takeoff me-2"></i> Access Your Dashboard
+                        </a>
+                        {% else %}
+                        <a href="/login?next=/projects" class="btn btn-primary">
+                            <i class="bi bi-rocket-takeoff me-2"></i> Sign In To Start
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 order-lg-1 mb-4 mb-lg-0">
+                <div class="workflow-image-container">
+                    <img src="/static/img/workflow-illustration.svg" alt="Workflow Process" class="img-fluid workflow-image">
+                    <div class="workflow-shape"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section py-5">
+    <div class="container">
+        <div class="cta-container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2 class="cta-title">Ready to streamline your AI prompt management?</h2>
+                    <p class="cta-description">Join your colleagues who are already using {{settings.APP.NAME}} to improve AI consistency and efficiency.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    {% if user %}
+                    <a href="/projects" class="btn btn-light btn-lg">
+                        <i class="bi bi-arrow-right me-2"></i> Go to Projects
+                    </a>
+                    {% else %}
+                    <a href="/login?next=/projects" class="btn btn-light btn-lg">
+                        <i class="bi bi-arrow-right me-2"></i> Access Platform
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="/projects">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter project name" required>
+                        <small class="text-muted">Give your project a clear, descriptive name</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="What is this project about?"></textarea>
+                        <small class="text-muted">Briefly describe the purpose of this prompt collection</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Create Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

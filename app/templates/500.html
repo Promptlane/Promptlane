@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - {{settings.APP.NAME}}{% endblock %}
+
+{% block content %}
+<div class="error-container text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-exclamation-triangle" style="font-size: 5rem; color: var(--bs-danger);"></i>
+    </div>
+    <h1 class="display-4 mb-3">500</h1>
+    <h2 class="mb-4">Server Error</h2>
+    <p class="lead mb-5">Something went wrong on our end. We're working to fix the issue.</p>
+    <div class="d-grid gap-3 d-sm-flex justify-content-center">
+        <a href="javascript:history.back()" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>Go Back
+        </a>
+        <a href="/" class="btn btn-primary">
+            <i class="bi bi-house-door me-2"></i>Go Home
+        </a>
+        <a href="javascript:location.reload()" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise me-2"></i>Try Again
+        </a>
+    </div>
+    {% if request.app.debug %}
+    <div class="error-details mt-5 text-start p-4 border bg-light rounded">
+        <h5 class="mb-3"><i class="bi bi-bug me-2"></i>Error Details</h5>
+        <pre class="text-danger">{{ error }}</pre>
+        <p class="text-muted small mt-3">This error information is only visible in debug mode.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .error-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,227 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin - Project Management | {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin/projects.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Project Management</h2>
+    <p class="text-muted">Manage projects and their associated resources</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+      <i class="bi bi-plus-circle"></i> New Project
+    </button>
+  </div>
+</div>
+
+<!-- Project List -->
+<div class="card">
+  <div class="card-header bg-transparent">
+    <div class="row align-items-center">
+      <div class="col-md-6 col-lg-8 mb-2 mb-md-0">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" class="form-control border-start-0" id="projectSearch" placeholder="Search projects...">
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 d-flex justify-content-md-end">
+        <select class="form-select w-auto me-2" id="projectStatusFilter">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="archived">Archived</option>
+          <option value="draft">Draft</option>
+        </select>
+        <button class="btn btn-outline-secondary" id="refreshProjects">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover project-table">
+        <thead>
+          <tr>
+            <th>Project Name</th>
+            <th>Owner</th>
+            <th>Team</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in projects %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="project-icon bg-light text-primary me-3">
+                  <i class="bi bi-kanban"></i>
+                </div>
+                <div>
+                  <div class="fw-medium">{{ project.name }}</div>
+                  <div class="small text-muted">
+                    <i class="bi bi-chat-square-text me-1"></i> {{ project.prompt_count }} prompts
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar-sm avatar-color-{{ loop.index % 6 + 1 }} me-2">
+                  {{ project.owner[:2].upper() }}
+                </div>
+                <span>{{ project.owner }}</span>
+              </div>
+            </td>
+            <td>
+              {% if project.team %}
+              <span class="badge bg-light text-dark">{{ project.team }}</span>
+              {% else %}
+              <span class="text-muted">Personal</span>
+              {% endif %}
+            </td>
+            <td>
+              <div>{{ project.created_at.strftime('%b %d, %Y') }}</div>
+              <div class="small text-muted">{{ project.created_at.strftime('%I:%M %p') }}</div>
+            </td>
+            <td>
+              <span class="badge {% if project.status == 'active' %}bg-success{% elif project.status == 'archived' %}bg-secondary{% else %}bg-warning{% endif %}">
+                {{ project.status|title }}
+              </span>
+            </td>
+            <td class="text-end">
+              <div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary view-project" data-project-id="{{ project.id }}">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary edit-project" data-project-id="{{ project.id }}">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-project" data-project-id="{{ project.id }}" data-project-name="{{ project.name }}">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-transparent">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        Showing <span class="fw-medium">{{ projects|length }}</span> projects
+      </div>
+      <nav aria-label="Project pagination">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+          </li>
+          <li class="page-item active"><a class="page-link" href="#">1</a></li>
+          <li class="page-item"><a class="page-link" href="#">2</a></li>
+          <li class="page-item"><a class="page-link" href="#">3</a></li>
+          <li class="page-item">
+            <a class="page-link" href="#">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-labelledby="createProjectModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createProjectModalLabel">Create New Project</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createProjectForm">
+          <div class="mb-3">
+            <label for="projectName" class="form-label">Project Name</label>
+            <input type="text" class="form-control" id="projectName" required>
+          </div>
+          <div class="mb-3">
+            <label for="projectDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="projectDescription" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="projectTeam" class="form-label">Assign to Team</label>
+            <select class="form-select" id="projectTeam">
+              <option value="">Personal Project</option>
+              <option value="engineering">Engineering Team</option>
+              <option value="marketing">Marketing Team</option>
+              <option value="product">Product Team</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="projectVisibility" class="form-label">Visibility</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="projectVisibility" id="projectVisibilityPrivate" value="private" checked>
+              <label class="form-check-label" for="projectVisibilityPrivate">
+                <i class="bi bi-lock me-1"></i> Private
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="projectVisibility" id="projectVisibilityTeam" value="team">
+              <label class="form-check-label" for="projectVisibilityTeam">
+                <i class="bi bi-people me-1"></i> Team Only
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="projectVisibility" id="projectVisibilityPublic" value="public">
+              <label class="form-check-label" for="projectVisibilityPublic">
+                <i class="bi bi-globe me-1"></i> Public
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="createProjectBtn">Create Project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Project Confirmation Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteProjectModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+          <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+        </div>
+        <p class="text-center">Are you sure you want to delete the project <strong id="deleteProjectName"></strong>?</p>
+        <p class="text-center text-danger"><small>This action cannot be undone.</small></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteProject">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin/projects.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,499 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin - User Management | {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin/users.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin/user-badges.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin/buttons.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>User Management</h2>
+    <p class="text-muted">Manage system users and their permissions</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+      <i class="bi bi-person-plus"></i> Add User
+    </button>
+  </div>
+</div>
+
+<!-- User Management Card -->
+<div class="card animate fadeUp">
+  <div class="admin-filters">
+    <div class="row g-3">
+      <div class="col-lg-5 col-md-6">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" placeholder="Find users by name or email..." id="userSearch">
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-3">
+        <select class="form-select" id="userStatusFilter">
+          <option value="all" selected>All Users</option>
+          <option value="admin">Admin Users</option>
+          <option value="regular">Regular Users</option>
+          <option value="invited">Invited Users</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-3">
+        <select class="form-select" id="sortOptions">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="a-z">A-Z</option>
+          <option value="z-a">Z-A</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-12 text-end">
+        <button class="btn btn-outline-primary" id="refreshUsers">
+          <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="user-table" style="width:100%; table-layout:fixed;">
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>User Info</th>
+            <th style="width: 150px;">Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user_item in users %}
+          <tr class="user-row" data-userid="{{ user_item.id }}" data-username="{{ user_item.username }}" data-isadmin="{{ user_item.is_admin|lower }}" data-status="{{ user_item.status|default('active') }}">
+            <td>{{ loop.index }}</td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar-sm avatar-color-{{ (loop.index % 6) + 1 }} me-3">
+                  {{ user_item.username[:2].upper() }}
+                </div>
+                <div>
+                  <div class="fw-semibold">{{ user_item.username }}</div>
+                  <div class="small text-muted">{{ user_item.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                {% if user_item.is_admin %}
+                <div style="color: #0d6efd;">
+                  <i class="bi bi-shield-check"></i> Admin
+                </div>
+                {% else %}
+                <div style="color: #6c757d;">
+                  <i class="bi bi-person"></i> Regular
+                </div>
+                {% endif %}
+                
+                {% if user_item.status == 'invited' %}
+                <div style="color: #0dcaf0; margin-top: 5px;">
+                  <i class="bi bi-envelope"></i> Invited
+                </div>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <div>{{ user_item.created_at.strftime('%b %d, %Y') }}</div>
+              <div class="small text-muted">{{ user_item.created_at.strftime('%I:%M %p') }}</div>
+            </td>
+            <td>
+              <div class="btn-group" style="display: flex; gap: 5px;">
+                <button class="btn btn-sm btn-outline-primary view-user" data-userid="{{ user_item.id }}" title="View Details" style="opacity:1; visibility:visible;">
+                  <i class="bi bi-eye"></i>
+                </button>
+                
+                {% if user_item.status == 'invited' %}
+                <button class="btn btn-sm btn-info resend-invite" data-userid="{{ user_item.id }}" data-email="{{ user_item.email }}" title="Resend Invitation" style="opacity:1; visibility:visible;">
+                  <i class="bi bi-envelope-arrow-up"></i> Resend
+                </button>
+                {% endif %}
+                
+                {% if user_item.id != user.id %}
+                <button class="btn btn-sm {% if user_item.is_admin %}btn-outline-warning remove-admin{% else %}btn-outline-success grant-admin{% endif %}" 
+                        data-userid="{{ user_item.id }}" data-username="{{ user_item.username }}"
+                        title="{% if user_item.is_admin %}Remove Admin Rights{% else %}Grant Admin Rights{% endif %}"
+                        style="opacity:1; visibility:visible;">
+                  <i class="bi {% if user_item.is_admin %}bi-shield-x{% else %}bi-shield-check{% endif %}"></i>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <span class="me-2">Show</span>
+      <select class="form-select form-select-sm" style="width: 60px">
+        <option value="10" selected>10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+      <span class="ms-2">entries</span>
+    </div>
+    <div>
+      <span class="page-info">Showing {{ users|length }} users</span>
+    </div>
+    <nav aria-label="User table navigation">
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item disabled"><a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a></li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a></li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<!-- User Status Legend -->
+<div class="mt-4 card p-3">
+  <h6 class="mb-2">User Status Legend</h6>
+  <div class="d-flex flex-wrap gap-3">
+    <div class="d-flex align-items-center">
+      <span class="badge bg-primary me-2"><i class="bi bi-shield-check"></i> Admin</span>
+      <span class="small text-muted">Has full system access</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <span class="badge bg-secondary me-2"><i class="bi bi-person"></i> Regular</span>
+      <span class="small text-muted">Standard user access</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <span class="badge bg-info me-2"><i class="bi bi-envelope"></i> Invited</span>
+      <span class="small text-muted">Invitation sent, waiting for user to accept</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- User Detail Modal -->
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userDetailModalLabel">User Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="user-profile-header mb-4">
+          <div class="user-avatar">
+            <div class="avatar-lg avatar-placeholder" id="userAvatarPlaceholder">JD</div>
+          </div>
+          <div class="user-info ms-4">
+            <h3 id="userDetailName">John Doe</h3>
+            <div id="userDetailBadges" class="mb-2">
+              <span class="badge bg-secondary">Regular User</span>
+            </div>
+            <div class="text-muted d-flex align-items-center">
+              <i class="bi bi-envelope me-2"></i>
+              <span id="userDetailEmail">john@example.com</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label d-block text-muted small text-uppercase">User ID</label>
+              <div class="fw-medium" id="userDetailId">12345</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label d-block text-muted small text-uppercase">Last Login</label>
+              <div class="fw-medium" id="userDetailLastLogin">
+                <i class="bi bi-clock-history me-1"></i> 2023-10-15 12:30 PM
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label d-block text-muted small text-uppercase">Created</label>
+              <div class="fw-medium" id="userDetailCreated">
+                <i class="bi bi-calendar3 me-1"></i> 2023-01-01
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label d-block text-muted small text-uppercase">Status</label>
+              <div class="fw-medium" id="userDetailStatus">
+                <i class="bi bi-person-check me-1"></i> Active
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="user-stats mb-4">
+          <h5>User Activity</h5>
+          <div class="row">
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card-sm">
+                <div class="stat-value" id="userStatsProjects">0</div>
+                <div class="stat-label">Projects</div>
+              </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card-sm">
+                <div class="stat-value" id="userStatsPrompts">0</div>
+                <div class="stat-label">Prompts</div>
+              </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card-sm">
+                <div class="stat-value" id="userStatsTeams">0</div>
+                <div class="stat-label">Teams</div>
+              </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card-sm">
+                <div class="stat-value" id="userStatsLogins">0</div>
+                <div class="stat-label">Logins</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+          <div>
+            <h5 class="mb-3">Recent Activity</h5>
+            <div class="text-muted">
+              <i class="bi bi-info-circle me-2"></i> Activity history is available in the Activity Log
+            </div>
+          </div>
+          <button class="btn btn-outline-primary" id="viewUserActivity">
+            <i class="bi bi-clock-history me-2"></i> View Activity
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="editUserBtn">
+          <i class="bi bi-pencil-square me-1"></i> Edit User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createUserModalLabel">
+          <i class="bi bi-person-plus me-2"></i> Invite New User
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-4">
+          <div class="d-flex">
+            <i class="bi bi-info-circle fs-5 me-2"></i>
+            <div>
+              <strong>User Invitation Flow:</strong>
+              <p class="mb-0">An email invitation will be sent to the user with a secure link to complete registration and set their password.</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="createUserForm">
+          <div class="mb-3">
+            <label for="newUsername" class="form-label">Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input type="text" class="form-control" id="newUsername" required placeholder="Enter username">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="newEmail" class="form-label">Email</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control" id="newEmail" required placeholder="Enter email address">
+            </div>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="isAdmin">
+            <label class="form-check-label" for="isAdmin">
+              <i class="bi bi-shield me-1"></i> Grant admin privileges
+            </label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Invitation Expiry</label>
+            <select class="form-select" id="invitationExpiry">
+              <option value="24">24 hours</option>
+              <option value="48" selected>48 hours</option>
+              <option value="72">72 hours</option>
+              <option value="168">7 days</option>
+            </select>
+            <div class="form-text">
+              <i class="bi bi-clock-history me-1"></i> After this period, the invitation link will expire and need to be resent.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Personalized Message (Optional)</label>
+            <textarea class="form-control" id="invitationMessage" rows="3" placeholder="Add a personal note to the invitation email..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="sendInvitationBtn">
+          <i class="bi bi-envelope-paper me-1"></i> Send Invitation
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resend Invitation Modal -->
+<div class="modal fade" id="resendInvitationModal" tabindex="-1" aria-labelledby="resendInvitationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resendInvitationModalLabel">Resend Invitation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-4">
+          <div class="action-icon mb-3">
+            <i class="bi bi-envelope-paper" style="font-size: 3rem; color: var(--info-color);"></i>
+          </div>
+          <h4>Resend User Invitation</h4>
+          <p class="text-muted" id="resendInviteMessage">
+            Resend invitation to <span class="fw-semibold" id="resendInviteEmail">user@example.com</span>?
+          </p>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">New Invitation Expiry</label>
+          <select class="form-select" id="resendInvitationExpiry">
+            <option value="24">24 hours</option>
+            <option value="48" selected>48 hours</option>
+            <option value="72">72 hours</option>
+            <option value="168">7 days</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-info" id="confirmResendInviteBtn">
+          <i class="bi bi-envelope-check me-1"></i> Resend Invitation
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Admin Action Modal -->
+<div class="modal fade" id="confirmAdminModal" tabindex="-1" aria-labelledby="confirmAdminModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmAdminModalLabel">Confirm Action</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-4">
+          <div class="action-icon mb-3">
+            <i class="bi bi-shield-exclamation" style="font-size: 3rem; color: var(--warning-color);"></i>
+          </div>
+          <h4 id="confirmActionTitle">Change Admin Privileges</h4>
+          <p id="confirmAdminMessage" class="text-muted">
+            Are you sure you want to grant admin privileges to this user?
+          </p>
+        </div>
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <span id="privilegeWarningText">Admin users have full access to all systems and can modify any settings.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning" id="confirmAdminActionBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin/users.js') }}"></script>
+<script>
+  // Enhanced UI/UX for buttons and badges
+  document.addEventListener('DOMContentLoaded', function() {
+    // Fix for badges in the status column
+    document.querySelectorAll('.user-table td:nth-child(3) .badge').forEach(badge => {
+      badge.style.display = 'inline-flex';
+      badge.style.visibility = 'visible';
+      badge.style.opacity = '1';
+      badge.style.border = '1px solid rgba(0,0,0,0.1)';
+      badge.style.padding = '6px 10px';
+      badge.style.borderRadius = '4px';
+      badge.style.fontWeight = '500';
+    });
+    
+    // Fix for all buttons to ensure consistent styling
+    document.querySelectorAll('.user-table .btn').forEach(button => {
+      button.style.opacity = '1';
+      button.style.visibility = 'visible';
+      button.style.display = 'inline-flex';
+      button.style.alignItems = 'center';
+      button.style.justifyContent = 'center';
+      
+      // Add tooltip titles for better UX
+      if (!button.getAttribute('title') && button.classList.contains('view-user')) {
+        button.setAttribute('title', 'View User Details');
+      }
+      
+      // Make sure icons are visible and properly sized
+      const icon = button.querySelector('i');
+      if (icon) {
+        icon.style.visibility = 'visible';
+        icon.style.opacity = '1';
+      }
+    });
+    
+    // Enhanced resend invite button styling
+    document.querySelectorAll('.resend-invite').forEach(button => {
+      button.style.backgroundColor = '#0069d9';
+      button.style.color = 'white';
+      button.style.borderRadius = '6px';
+      button.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+      button.style.border = '1px solid #0062cc';
+      button.setAttribute('title', 'Resend Invitation Email');
+      
+      const icon = button.querySelector('i');
+      if (icon) {
+        icon.style.color = 'white';
+        icon.style.fontSize = '1.2rem';
+        icon.style.visibility = 'visible';
+        icon.style.opacity = '1';
+      }
+    });
+    
+    // Add subtle hover effect to all table rows for better UX
+    document.querySelectorAll('.user-table tbody tr').forEach(row => {
+      row.style.transition = 'background-color 0.2s ease';
+      row.addEventListener('mouseenter', () => {
+        row.style.backgroundColor = 'rgba(0,0,0,0.03)';
+      });
+      row.addEventListener('mouseleave', () => {
+        row.style.backgroundColor = '';
+      });
+    });
+    
+    console.log('Enhanced UI/UX styling applied to buttons, badges, and avatars');
+  });
+</script>
+{% endblock %} 

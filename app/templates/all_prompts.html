@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}All Prompts | {{settings.APP.NAME}}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>All Prompts</h1>
+        <p class="page-subtitle">
+            View and manage all your prompts across projects
+        </p>
+    </div>
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="newPromptDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plus-lg me-1"></i> New Prompt
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="newPromptDropdown">
+            <li><a class="dropdown-item" href="/projects">Select a project first</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="content-container">
+    <!-- Search and filter bar -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <form class="d-flex search-form flex-grow-1 me-md-3 mb-3 mb-md-0" method="GET" action="/prompts">
+            <div class="input-group">
+                <input type="search" class="form-control" name="search" placeholder="Search prompts..." value="{{ request.query_params.search|default('') }}" aria-label="Search prompts">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+        <div class="d-flex">
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-sort-alpha-down me-1"></i> Sort
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                    <li><a class="dropdown-item {% if sort == 'name_asc' or not sort %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=name_asc">Name (A-Z)</a></li>
+                    <li><a class="dropdown-item {% if sort == 'name_desc' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=name_desc">Name (Z-A)</a></li>
+                    <li><a class="dropdown-item {% if sort == 'created_asc' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=created_asc">Oldest first</a></li>
+                    <li><a class="dropdown-item {% if sort == 'created_desc' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=created_desc">Newest first</a></li>
+                </ul>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                    <li><a class="dropdown-item {% if filter == 'all' or not filter %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}filter=all">All prompts</a></li>
+                    <li><a class="dropdown-item {% if filter == 'with_vars' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}filter=with_vars">With variables</a></li>
+                    <li><a class="dropdown-item {% if filter == 'no_vars' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}filter=no_vars">Without variables</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item {% if filter == 'my_prompts' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}filter=my_prompts">My prompts</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% if prompts|length == 0 %}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="bi bi-journal-text" style="font-size: 3rem; color: var(--secondary-color);"></i>
+        </div>
+        <h3>No prompts found</h3>
+        <p class="text-muted">Start by creating a prompt template in one of your projects</p>
+        <a href="/projects" class="btn btn-primary mt-3">
+            <i class="bi bi-folder me-2"></i> Go to Projects
+        </a>
+    </div>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Project</th>
+                    <th>Variables</th>
+                    <th>Created</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prompt in prompts %}
+                <tr>
+                    <td>
+                        <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="fw-semibold text-decoration-none">
+                            {{ prompt.name }}
+                            {% if not prompt.enabled|default(true) %}
+                            <span class="badge bg-secondary ms-1">Disabled</span>
+                            {% endif %}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="/projects/{{ prompt.project_id }}/prompts" class="text-decoration-none">
+                            {{ prompt.project_name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if prompt.variables|length > 0 %}
+                            {% for variable in prompt.variables %}
+                            <span class="badge-variable">{{ variable }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <small class="text-muted">None</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ prompt.created_at }}</td>
+                    <td>{{ prompt.created_by }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}/use" class="btn btn-sm btn-outline-primary" {% if not prompt.enabled|default(true) %}disabled title="Prompt is disabled"{% endif %}>
+                                <i class="bi bi-play-fill"></i> Use
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

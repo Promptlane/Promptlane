@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Registration | {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .password-requirements {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+  }
+  
+  .password-requirements ul {
+    padding-left: 1.5rem;
+    margin-bottom: 0;
+  }
+  
+  .password-strength {
+    margin-top: 0.5rem;
+  }
+  
+  .password-strength .progress {
+    height: 5px;
+    border-radius: 3px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <img src="{{ url_for('static', path='img/logo.png') }}" alt="{{ settings.APP.NAME }} Logo" class="auth-logo">
+      <h1>Complete Registration</h1>
+    </div>
+    
+    <div class="auth-body">
+      {% if error_message %}
+      <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error_message }}
+      </div>
+      {% endif %}
+      
+      <p class="text-center mb-4">
+        You're almost there! Please set your password to complete your registration.
+      </p>
+      
+      <div class="user-info mb-4">
+        <div class="row">
+          <div class="col-sm-6">
+            <div class="mb-3">
+              <label class="form-label text-muted small">Username</label>
+              <div class="form-control-plaintext fw-bold">{{ username }}</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="mb-3">
+              <label class="form-label text-muted small">Email</label>
+              <div class="form-control-plaintext">{{ email }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <form method="post" action="/complete-registration">
+        <input type="hidden" name="token" value="{{ token }}">
+        
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-key"></i></span>
+            <input type="password" class="form-control" id="password" name="password" required>
+            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div class="password-strength">
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div class="password-feedback text-muted mt-1 small"></div>
+          </div>
+          <div class="password-requirements">
+            <p class="mb-1">Password must have:</p>
+            <ul>
+              <li>At least 8 characters</li>
+              <li>At least one uppercase letter</li>
+              <li>At least one number</li>
+              <li>At least one special character</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label for="password_confirm" class="form-label">Confirm Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-check2-circle"></i></span>
+            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password_confirm">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div id="password-match-feedback" class="form-text"></div>
+        </div>
+        
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-2"></i> Complete Registration
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="auth-footer">
+      <p>Already have an account? <a href="/login">Sign In</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Password strength meter
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('password_confirm');
+    const passwordStrengthBar = document.querySelector('.password-strength .progress-bar');
+    const passwordFeedback = document.querySelector('.password-feedback');
+    const passwordMatchFeedback = document.getElementById('password-match-feedback');
+    
+    // Password strength check
+    passwordInput.addEventListener('input', function() {
+      const password = this.value;
+      let strength = 0;
+      let feedback = '';
+      
+      if (password.length > 0) {
+        // Length check
+        if (password.length >= 8) {
+          strength += 25;
+        }
+        
+        // Has uppercase
+        if (/[A-Z]/.test(password)) {
+          strength += 25;
+        }
+        
+        // Has number
+        if (/[0-9]/.test(password)) {
+          strength += 25;
+        }
+        
+        // Has special char
+        if (/[^A-Za-z0-9]/.test(password)) {
+          strength += 25;
+        }
+        
+        // Set feedback and color
+        if (strength < 50) {
+          feedback = 'Weak password';
+          passwordStrengthBar.style.backgroundColor = '#dc3545'; // danger
+        } else if (strength < 75) {
+          feedback = 'Moderate password';
+          passwordStrengthBar.style.backgroundColor = '#ffc107'; // warning
+        } else {
+          feedback = 'Strong password';
+          passwordStrengthBar.style.backgroundColor = '#28a745'; // success
+        }
+      }
+      
+      passwordStrengthBar.style.width = strength + '%';
+      passwordFeedback.textContent = feedback;
+      
+      // Check match if confirm field has value
+      if (confirmPasswordInput.value) {
+        checkPasswordMatch();
+      }
+    });
+    
+    // Password match check
+    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    
+    function checkPasswordMatch() {
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      
+      if (confirmPassword) {
+        if (password === confirmPassword) {
+          passwordMatchFeedback.textContent = 'Passwords match';
+          passwordMatchFeedback.className = 'form-text text-success';
+          confirmPasswordInput.style.borderColor = '#28a745';
+        } else {
+          passwordMatchFeedback.textContent = 'Passwords do not match';
+          passwordMatchFeedback.className = 'form-text text-danger';
+          confirmPasswordInput.style.borderColor = '#dc3545';
+        }
+      } else {
+        passwordMatchFeedback.textContent = '';
+        confirmPasswordInput.style.borderColor = '';
+      }
+    }
+    
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-password').forEach(button => {
+      button.addEventListener('click', function() {
+        const targetId = this.getAttribute('data-target');
+        const target = document.getElementById(targetId);
+        
+        if (target.type === 'password') {
+          target.type = 'text';
+          this.querySelector('i').classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+          target.type = 'password';
+          this.querySelector('i').classList.replace('bi-eye-slash', 'bi-eye');
+        }
+      });
+    });
+  });
+</script>
+{% endblock %} 

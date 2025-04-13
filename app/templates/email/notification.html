@@ -1,0 +1,45 @@
+{% extends "email/base.html" %}
+
+{% block title %}{{ notification_title }} - {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .notification-box {
+        background-color: #f0f7ff;
+        border-left: 4px solid #4361ee;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+    }
+    .notification-icon {
+        font-size: 24px;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    .action-link {
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p>Hello {{ recipient_name }},</p>
+
+<div class="notification-box">
+    <h2>{{ notification_title }}</h2>
+    <p>{{ notification_message }}</p>
+</div>
+
+{% if action_url and action_text %}
+<p class="action-link">
+    <a href="{{ action_url }}" class="button">{{ action_text }}</a>
+</p>
+{% endif %}
+
+{% if additional_details %}
+<h3>Additional Details:</h3>
+<p>{{ additional_details }}</p>
+{% endif %}
+{% endblock %}
+
+{% block year %}{{ current_year }}{% endblock %} 

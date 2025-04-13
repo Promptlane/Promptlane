@@ -1,0 +1,109 @@
+/* User action buttons styles */
+.user-table .btn-group {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+.user-table .btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 40px !important;
+  height: 38px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+  border-width: 0 !important;
+}
+
+.user-table .btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+.user-table .btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+/* Resend invitation button */
+.user-table .resend-invite {
+  background-color: #0069d9 !important;
+  color: white !important;
+  border: 1px solid #0062cc !important;
+}
+
+.user-table .resend-invite:hover {
+  background-color: #0062cc !important;
+}
+
+.user-table .resend-invite i {
+  color: white !important;
+  font-size: 1.2rem !important;
+  margin-right: 1px !important;
+}
+
+/* View details button */
+.user-table .view-user {
+  background-color: #f8f9fa !important;
+  color: #0d6efd !important;
+  border: 1px solid #dee2e6 !important;
+}
+
+.user-table .view-user:hover {
+  background-color: #e9ecef !important;
+}
+
+/* Admin rights buttons */
+.user-table .grant-admin {
+  background-color: #d1e7dd !important;
+  color: #0f5132 !important;
+}
+
+.user-table .grant-admin:hover {
+  background-color: #198754 !important;
+  color: #fff !important;
+}
+
+.user-table .remove-admin {
+  background-color: #fff3cd !important;
+  color: #664d03 !important;
+}
+
+.user-table .remove-admin:hover {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+
+/* Make icons in buttons visible */
+.user-table .btn i {
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 1.1rem !important;
+}
+
+/* Add consistent padding around icon */
+.user-table .btn i {
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Add tooltip style for better UX */
+.user-table .btn:hover::after {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* For button focus states */
+.user-table .btn:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25) !important;
+}
+
+/* For debugging - add outline to buttons */
+.debug-outline .user-table .btn {
+  outline: 2px solid red !important;
+} 

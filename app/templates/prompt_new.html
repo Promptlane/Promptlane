@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}New Prompt | {{ project.name }}{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/projects/{{ project.id }}/prompts">
+        <i class="bi bi-chevron-right"></i> {{ project.name }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="#">
+        <i class="bi bi-chevron-right"></i> New Prompt
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center mb-3">
+    <a href="/projects/{{ project.id }}/prompts" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back to Prompts
+    </a>
+    <h1 class="mb-0">Create New Prompt</h1>
+</div>
+
+<div class="content-container">
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" action="/projects/{{ project.id }}/prompts">
+                <div class="mb-4">
+                    <label for="name" class="form-label fw-semibold">Prompt Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Give your prompt a descriptive name" required autofocus>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i> This will be used to identify your prompt and will also create a URL slug.
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="system_prompt" class="form-label fw-semibold">System Prompt</label>
+                    <textarea class="form-control" id="system_prompt" name="system_prompt" rows="6" placeholder="Instructions that define the AI assistant's behavior, capabilities, and limitations" required></textarea>
+                    <div class="form-text">
+                        <i class="bi bi-gear me-1"></i> The system prompt defines the behavior and capabilities of the AI model.
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="user_prompt" class="form-label fw-semibold">User Prompt</label>
+                    <textarea class="form-control" id="user_prompt" name="user_prompt" rows="10" placeholder="The actual prompt text with optional variables like {{variable_name}}" required></textarea>
+                    <div class="form-text">
+                        <i class="bi bi-braces me-1"></i> Use <code>{{variable_name}}</code> syntax for dynamic variables that can be filled when using the prompt.
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="/projects/{{ project.id }}/prompts" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Create Prompt
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i> Tips</h5>
+                </div>
+                <div class="card-body">
+                    <h6>System Prompt Best Practices</h6>
+                    <ul class="mb-3">
+                        <li>Define the role, capabilities, and constraints</li>
+                        <li>Set the tone and style of communication</li>
+                        <li>Specify response formats if needed</li>
+                    </ul>
+                    
+                    <h6>User Prompt Best Practices</h6>
+                    <ul class="mb-3">
+                        <li>Be clear and specific about what you want</li>
+                        <li>Use variables for dynamic content</li>
+                        <li>Provide context and examples if helpful</li>
+                    </ul>
+                    
+                    <h6>Variable Examples</h6>
+                    <pre class="bg-light p-2 rounded"><code>Write a {{tone}} email to {{recipient}} about {{topic}}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

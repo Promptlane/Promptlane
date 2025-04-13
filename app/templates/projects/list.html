@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - {{ settings.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Your Projects</h1>
+        <p class="page-subtitle">Manage all your AI prompt templates in one place</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+        <i class="bi bi-plus-lg me-1"></i> New Project
+    </button>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+</div>
+{% endif %}
+
+<!-- Search and filter bar -->
+<div class="content-container mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <form class="d-flex search-form flex-grow-1 me-md-3 mb-3 mb-md-0" method="GET" action="/projects">
+            <div class="input-group">
+                <input type="search" class="form-control" name="search" placeholder="Search projects..." value="{{ request.query_params.search|default('') }}" aria-label="Search projects">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+        <div class="d-flex">
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-sort-alpha-down me-1"></i> Sort
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                    <li><a class="dropdown-item {% if sort == 'name_asc' or not sort %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=name_asc">Name (A-Z)</a></li>
+                    <li><a class="dropdown-item {% if sort == 'name_desc' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=name_desc">Name (Z-A)</a></li>
+                    <li><a class="dropdown-item {% if sort == 'created_asc' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=created_asc">Oldest first</a></li>
+                    <li><a class="dropdown-item {% if sort == 'created_desc' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=created_desc">Newest first</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item {% if sort == 'prompt_count' %}active{% endif %}" href="?{% if request.query_params.search %}search={{ request.query_params.search }}&{% endif %}sort=prompt_count">Most prompts</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for project in projects %}
+    <div class="col">
+        <div class="card project-card h-100" style="cursor: pointer;" onclick="window.location.href='/projects/{{ project.id }}'">
+            <div class="card-body">
+                <h5 class="card-title">{{ project.name }}</h5>
+                <p class="card-text">{{ project.description }}</p>
+                <div class="project-stats">
+                    <div class="project-stat">
+                        <i class="bi bi-file-text"></i>
+                        <span>{{ project.prompt_count }} prompts</span>
+                    </div>
+                    <div class="project-stat" data-bs-toggle="tooltip" data-bs-placement="top" title="Created: {{ project.created_at }}">
+                        <i class="bi bi-clock-history"></i>
+                        <span class="date-badge">{{ project.created_at }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">By {{ project.created_by }}</small>
+                    <a href="/projects/{{ project.id }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                        <i class="bi bi-eye me-1"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Add Project Card -->
+    <div class="col">
+        <div class="add-project-card" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+            <div class="text-center">
+                <i class="bi bi-plus-circle add-project-icon mb-2"></i>
+                <p class="mb-0">Create New Project</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="/projects">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter project name" required>
+                        <small class="text-muted">Give your project a clear, descriptive name</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="What is this project about?"></textarea>
+                        <small class="text-muted">Briefly describe the purpose of this prompt collection</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Create Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %} 

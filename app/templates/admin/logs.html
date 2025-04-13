@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Audit Logs | {{settings.APP.NAME}}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div class="header-brand">
+      <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+      </button>
+      <h1>{{settings.APP.NAME}} Admin</h1>
+    </div>
+    <div class="header-actions">
+      <div class="search-container">
+        <input type="text" placeholder="Search..." class="admin-search" id="logSearch">
+        <i class="bi bi-search"></i>
+      </div>
+      <div class="notifications">
+        <i class="bi bi-bell"></i>
+        <span class="badge">3</span>
+      </div>
+      <div class="admin-profile">
+        <img src="{{ url_for('static', path='img/avatar.png') }}" alt="Admin Avatar">
+        <span>{{ user.username }}</span>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-main">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar">
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="/admin/dashboard">
+              <i class="bi bi-speedometer2"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/users">
+              <i class="bi bi-people"></i>
+              <span>Users</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/teams">
+              <i class="bi bi-people-fill"></i>
+              <span>Teams</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/projects">
+              <i class="bi bi-kanban"></i>
+              <span>Projects</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/prompts">
+              <i class="bi bi-chat-left-text"></i>
+              <span>Prompts</span>
+            </a>
+          </li>
+          <li class="nav-section">
+            <span>Insights</span>
+          </li>
+          <li>
+            <a href="/admin/reports">
+              <i class="bi bi-bar-chart"></i>
+              <span>Reports</span>
+            </a>
+          </li>
+          <li class="active">
+            <a href="/admin/logs">
+              <i class="bi bi-journal-text"></i>
+              <span>Audit Logs</span>
+            </a>
+          </li>
+          <li class="nav-section">
+            <span>Configuration</span>
+          </li>
+          <li>
+            <a href="/admin/settings">
+              <i class="bi bi-gear"></i>
+              <span>Settings</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/security">
+              <i class="bi bi-shield-lock"></i>
+              <span>Security</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/admin/help">
+          <i class="bi bi-question-circle"></i>
+          <span>Help</span>
+        </a>
+        <a href="/logout">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-content">
+      <div class="page-header">
+        <h2>Audit Logs</h2>
+        <div class="header-actions">
+          <div class="dropdown me-2">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-download"></i> Export
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+              <li><a class="dropdown-item" href="#">Export as CSV</a></li>
+              <li><a class="dropdown-item" href="#">Export as JSON</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-secondary">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+        </div>
+      </div>
+
+      <!-- Audit Logs Content -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-0">System Activity Logs</h5>
+            <p class="text-muted small mb-0">Track all user activities and system events</p>
+          </div>
+        </div>
+        
+        <div class="admin-filters mb-3 p-3 border-bottom">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Search logs..." id="logSearch">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="activityTypeFilter">
+                <option value="all" selected>All Activity Types</option>
+                <option value="user">User Related</option>
+                <option value="project">Project Related</option>
+                <option value="prompt">Prompt Related</option>
+                <option value="team">Team Related</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="dateRangeFilter">
+                <option value="all" selected>All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select class="form-select">
+                <option value="10" selected>10 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+                <option value="100">100 per page</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover logs-table">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col" style="width: 40px;">#</th>
+                  <th scope="col">Activity</th>
+                  <th scope="col">User</th>
+                  <th scope="col">Timestamp</th>
+                  <th scope="col">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for log in logs %}
+                <tr class="log-row" data-logid="{{ log.id }}" data-activity="{{ log.activity_type }}">
+                  <td>{{ loop.index }}</td>
+                  <td>
+                    {% set icon = "person" if "user" in log.activity_type else "kanban" if "project" in log.activity_type else "chat-left-text" if "prompt" in log.activity_type else "people-fill" if "team" in log.activity_type else "gear" %}
+                    <span class="badge bg-secondary">
+                      <i class="bi bi-{{ icon }} me-1"></i>
+                      {{ log.activity_type }}
+                    </span>
+                  </td>
+                  <td>{{ log.user }}</td>
+                  <td>{{ log.created_at }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-primary view-log" data-logid="{{ log.id }}">
+                      <i class="bi bi-eye"></i> View
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Showing {{ logs|length }} logs</span>
+            <nav aria-label="Logs table navigation">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item"><a class="page-link" href="#">Next</a></li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Log Detail Modal -->
+<div class="modal fade" id="logDetailModal" tabindex="-1" aria-labelledby="logDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logDetailModalLabel">Log Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="logDetailContent">
+          <!-- Log details will be loaded here -->
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin/dashboard.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Log search functionality
+    const logSearch = document.getElementById('logSearch');
+    if (logSearch) {
+      logSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const logRows = document.querySelectorAll('.log-row');
+        
+        logRows.forEach(row => {
+          const activityType = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+          const user = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+          
+          if (activityType.includes(searchTerm) || user.includes(searchTerm)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+    }
+    
+    // Activity type filter
+    const activityTypeFilter = document.getElementById('activityTypeFilter');
+    if (activityTypeFilter) {
+      activityTypeFilter.addEventListener('change', function() {
+        const filterValue = this.value.toLowerCase();
+        const logRows = document.querySelectorAll('.log-row');
+        
+        logRows.forEach(row => {
+          const activityType = row.getAttribute('data-activity').toLowerCase();
+          
+          if (filterValue === 'all' || activityType.includes(filterValue)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+    }
+    
+    // View log details
+    const viewLogButtons = document.querySelectorAll('.view-log');
+    viewLogButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const logId = this.getAttribute('data-logid');
+        const row = this.closest('tr');
+        const activityType = row.querySelector('td:nth-child(2)').textContent.trim();
+        const user = row.querySelector('td:nth-child(3)').textContent.trim();
+        const timestamp = row.querySelector('td:nth-child(4)').textContent.trim();
+        
+        // In a real implementation, you would fetch the log details using an API
+        // For now, we'll just display what we have
+        document.getElementById('logDetailContent').innerHTML = `
+          <h5 class="mb-3">${activityType}</h5>
+          
+          <table class="table">
+            <tr>
+              <th>User:</th>
+              <td>${user}</td>
+            </tr>
+            <tr>
+              <th>Timestamp:</th>
+              <td>${timestamp}</td>
+            </tr>
+            <tr>
+              <th>Details:</th>
+              <td>
+                <pre class="bg-light p-2 rounded">${JSON.stringify({
+                  "action": activityType,
+                  "user": user,
+                  "timestamp": timestamp,
+                  "ip_address": "192.168.1.1",
+                  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }, null, 2)}</pre>
+              </td>
+            </tr>
+          </table>
+        `;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('logDetailModal'));
+        modal.show();
+      });
+    });
+  });
+</script>
+{% endblock %} 

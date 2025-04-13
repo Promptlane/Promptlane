@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - {{settings.APP.NAME}}{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="row g-0">
+            <!-- Left side - Image/Brand -->
+            <div class="col-lg-5 d-none d-lg-block auth-bg">
+                <div class="auth-brand-container">
+                    <div class="auth-brand">
+                        <h2><i class="bi bi-braces-asterisk me-2"></i>{{settings.APP.NAME}}</h2>
+                        <p class="brand-tagline">Your AI prompt management platform</p>
+                    </div>
+                    
+                    <div class="auth-illustration">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" class="floating-icon python-icon" alt="Python">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" class="floating-icon js-icon" alt="JavaScript">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/openai/openai-original.svg" class="floating-icon openai-icon" alt="OpenAI">
+                        <div class="illustration-placeholder">
+                            <i class="bi bi-code-square illustration-icon"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="auth-benefits">
+                        <h5>Create an account to:</h5>
+                        <div class="auth-benefit">
+                            <div class="benefit-icon-wrapper">
+                                <i class="bi bi-folder-check"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <span class="benefit-title">Organize Prompts</span>
+                                <span class="benefit-description">Create and manage prompt libraries</span>
+                            </div>
+                        </div>
+                        <div class="auth-benefit">
+                            <div class="benefit-icon-wrapper">
+                                <i class="bi bi-git"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <span class="benefit-title">Version Control</span>
+                                <span class="benefit-description">Save versions of your best prompts</span>
+                            </div>
+                        </div>
+                        <div class="auth-benefit">
+                            <div class="benefit-icon-wrapper">
+                                <i class="bi bi-lightning-charge"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <span class="benefit-title">Test & Deploy</span>
+                                <span class="benefit-description">Test prompts before production use</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right side - Registration Form -->
+            <div class="col-lg-7">
+                <div class="auth-form-container">
+                    <div class="auth-header">
+                        <h1>Create your account</h1>
+                        <p>Join the {{settings.APP.NAME}} community today</p>
+                    </div>
+                    
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="/register" class="auth-form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                            </div>
+                            <small class="form-text text-muted">Username will be visible to others</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                            </div>
+                            <small class="form-text text-muted">Must be at least 8 characters</small>
+                        </div>
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                            </div>
+                        </div>
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="termsCheck" required>
+                            <label class="form-check-label" for="termsCheck">
+                                I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
+                            </label>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+                        </div>
+                    </form>
+                    
+                    <div class="auth-footer">
+                        <p>Already have an account? <a href="/login">Sign in</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

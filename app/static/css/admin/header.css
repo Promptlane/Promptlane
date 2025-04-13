@@ -1,0 +1,197 @@
+/* Admin Header Styles */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--primary-bg, #0c1e35);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+}
+
+.header-brand h1 {
+  font-size: 1.25rem;
+  margin: 0;
+  font-weight: 600;
+  margin-left: 1rem;
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Search container */
+.search-container {
+  position: relative;
+  width: 300px;
+}
+
+.admin-search {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border-radius: 50px;
+  border: none;
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 0.9rem;
+}
+
+.admin-search::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+
+.search-container i {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.6);
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  display: none;
+  z-index: 1000;
+}
+
+/* Notification button */
+.notification-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  position: relative;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.notification-btn .badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--danger-color, #dc3545);
+  color: white;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--primary-bg, #0c1e35);
+}
+
+/* Admin profile */
+.admin-profile {
+  position: relative;
+}
+
+.profile-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  border-radius: 30px;
+  transition: background-color 0.2s;
+}
+
+.profile-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.profile-btn img,
+.profile-btn .avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  border: 2px solid rgba(255,255,255,0.2);
+  object-fit: cover;
+}
+
+.profile-btn span {
+  font-weight: 500;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* Dropdowns */
+.notification-dropdown,
+.profile-dropdown {
+  min-width: 280px;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-radius: 0.5rem;
+}
+
+.dropdown-header {
+  font-weight: 600;
+  color: #1f2937;
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-item {
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-item i {
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+
+/* For small screens */
+@media (max-width: 768px) {
+  .search-container {
+    width: 200px;
+  }
+  
+  .profile-btn span {
+    display: none;
+  }
+  
+  .profile-btn img,
+  .profile-btn .avatar-placeholder {
+    margin-right: 0;
+  }
+} 

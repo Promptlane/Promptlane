@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin | {{settings.APP.NAME}}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Admin Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin/avatars.css') }}">
+    
+    <!-- Additional CSS for specific admin pages -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="admin-body">
+    <!-- Notification container for alerts -->
+    <div id="notificationContainer"></div>
+
+    <div class="admin-container">
+        <!-- Include admin header partial -->
+        {% include "admin/partials/header.html" %}
+
+        <div class="admin-main">
+            <!-- Include admin sidebar partial with active page -->
+            {% with active_page=active_page|default('dashboard') %}
+                {% include "admin/partials/sidebar.html" %}
+            {% endwith %}
+
+            <!-- Main Content Area -->
+            <main class="admin-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% block modals %}{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', path='js/admin/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', path='js/admin/avatars.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

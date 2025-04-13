@@ -1,0 +1,45 @@
+{% extends "email/base.html" %}
+
+{% block title %}Welcome to {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .personal-message { 
+        background-color: #f0f4ff; 
+        padding: 15px; 
+        border-left: 4px solid #4361ee; 
+        margin: 15px 0; 
+        font-style: italic; 
+    }
+    .expiry { 
+        background-color: #f8f9fa; 
+        padding: 10px; 
+        border-radius: 4px; 
+        margin: 15px 0; 
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p>Hello {{ recipient_name }},</p>
+
+<p>You have been invited by <strong>{{ inviter_name }}</strong> to join {{ settings.APP.NAME }} as a <strong>{{ account_type }}</strong>.</p>
+
+{% if personal_message %}
+<div class="personal-message">
+    {{ personal_message }}
+</div>
+{% endif %}
+
+<p>To complete your registration and set up your account, please click the button below:</p>
+
+<center><a href="{{ invitation_url }}" class="button">Complete Registration</a></center>
+
+<div class="expiry">
+    <p><strong>Note:</strong> This invitation will expire on {{ expiry_date }}.</p>
+</div>
+
+<p>If you did not expect this invitation, please ignore this email.</p>
+{% endblock %}
+
+{% block year %}{{ current_year }}{% endblock %} 

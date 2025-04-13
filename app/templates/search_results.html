@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results | {{ settings.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Search Results</h1>
+    <p class="page-subtitle">
+        {% if query %}
+        Showing results for "{{ query }}" {% if search_type != 'all' %}in {{ search_type }}{% endif %}
+        {% else %}
+        Showing all {% if search_type != 'all' %}{{ search_type }}{% else %}items{% endif %}
+        {% endif %}
+    </p>
+</div>
+
+{% if not projects and not prompts %}
+<div class="content-container text-center py-5">
+    <div class="mb-3">
+        <i class="bi bi-search" style="font-size: 3rem; color: var(--secondary-color);"></i>
+    </div>
+    <h3>No results found</h3>
+    <p class="text-muted">Try using different keywords or broaden your search</p>
+    
+    <div class="mt-4 col-md-6 mx-auto">
+        <form method="GET" action="/search" class="d-flex">
+            <div class="input-group">
+                <input type="search" class="form-control" name="q" placeholder="Search..." value="{{ query }}" aria-label="Search">
+                <select class="form-select" name="type">
+                    <option value="all" {% if search_type == 'all' %}selected{% endif %}>All</option>
+                    <option value="projects" {% if search_type == 'projects' %}selected{% endif %}>Projects</option>
+                    <option value="prompts" {% if search_type == 'prompts' %}selected{% endif %}>Prompts</option>
+                </select>
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+
+<!-- Projects Section -->
+{% if projects or search_type == 'all' or search_type == 'projects' %}
+<div class="content-container mb-4">
+    <h2 class="mb-3">
+        <i class="bi bi-kanban me-2"></i> Projects
+        {% if projects|length > 0 %}
+        <span class="badge bg-secondary ms-2">{{ projects|length }}</span>
+        {% endif %}
+    </h2>
+
+    {% if projects|length == 0 %}
+    <p class="text-muted">No matching projects found.</p>
+    {% else %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for project in projects %}
+        <div class="col">
+            <div class="card project-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.name }}</h5>
+                    <p class="card-text">{{ project.description }}</p>
+                    <div class="project-stats">
+                        <div class="project-stat">
+                            <i class="bi bi-file-text"></i>
+                            <span>{{ project.prompt_count }} prompts</span>
+                        </div>
+                        <div class="project-stat" data-bs-toggle="tooltip" data-bs-placement="top" title="Created: {{ project.created_at }}">
+                            <i class="bi bi-clock-history"></i>
+                            <span class="date-badge">{{ project.created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">By {{ project.created_by }}</small>
+                        <a href="/projects/{{ project.id }}/prompts" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-arrow-right me-1"></i> View Prompts
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Prompts Section -->
+{% if prompts or search_type == 'all' or search_type == 'prompts' %}
+<div class="content-container">
+    <h2 class="mb-3">
+        <i class="bi bi-chat-dots me-2"></i> Prompts
+        {% if prompts|length > 0 %}
+        <span class="badge bg-secondary ms-2">{{ prompts|length }}</span>
+        {% endif %}
+    </h2>
+
+    {% if prompts|length == 0 %}
+    <p class="text-muted">No matching prompts found.</p>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Project</th>
+                    <th>Variables</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prompt in prompts %}
+                <tr>
+                    <td>
+                        <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="fw-semibold text-decoration-none">
+                            {{ prompt.name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="/projects/{{ prompt.project_id }}/prompts" class="text-decoration-none">
+                            {{ prompt.project_name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if prompt.variables|length > 0 %}
+                        {% for variable in prompt.variables %}
+                        <span class="badge-variable">{{ variable }}</span>
+                        {% endfor %}
+                        {% else %}
+                        <small class="text-muted">None</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ prompt.created_by }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}/use" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-play-fill"></i> Use
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %} 

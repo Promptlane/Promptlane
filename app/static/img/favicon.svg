@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="faviconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A6CF7" />
+      <stop offset="100%" stop-color="#9439FF" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Square background with rounded corners -->
+  <rect x="0" y="0" width="32" height="32" rx="6" fill="url(#faviconGradient)" />
+  
+  <!-- Command prompt checkmark symbol in white -->
+  <polyline points="8,16 14,22 24,10" stroke="white" stroke-width="3" fill="none" />
+</svg> 

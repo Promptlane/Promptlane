@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Base styles */
+        body { 
+            font-family: 'Inter', Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header { 
+            background-color: #4361ee; 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content { 
+            padding: 30px 25px; 
+        }
+        .button { 
+            display: inline-block; 
+            background-color: #4361ee; 
+            color: white; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            margin: 20px 0;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(67, 97, 238, 0.3);
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: #3251d4;
+        }
+        .footer { 
+            font-size: 12px; 
+            color: #777; 
+            margin-top: 30px; 
+            text-align: center;
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-top: 1px solid #eaeaea;
+        }
+        .note {
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 4px; 
+            margin: 15px 0;
+            border-left: 4px solid #dee2e6;
+        }
+        /* Additional styles for specific components */
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% block title %}{{settings.APP.NAME}}{% endblock %}</h1>
+        </div>
+        <div class="content">
+            {% block content %}{% endblock %}
+            
+            {% block signature %}
+            <p>Best regards,<br>The {{settings.APP.NAME}} Team</p>
+            {% endblock %}
+        </div>
+        <div class="footer">
+            <p>© {% block year %}{% endblock %} {{settings.APP.NAME}}. All rights reserved.</p>
+            <p>This is an automated message, please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html> 

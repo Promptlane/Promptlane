@@ -1,0 +1,74 @@
+/* User Status Badges - with increased visibility */
+.user-table td .badge,
+.user-table .badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.4rem 0.7rem !important;
+  font-weight: 500 !important;
+  border-radius: 50rem !important;
+  min-width: 90px !important;
+  justify-content: center !important;
+  font-size: 0.8rem !important;
+  margin: 2px 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Regular user badge - make it more visible with darker gray */
+.user-table td .badge.bg-secondary,
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+  color: white !important;
+  border: 1px solid #5a6268 !important;
+}
+
+/* Admin badge */
+.user-table td .badge.bg-primary,
+.badge.bg-primary {
+  background-color: #0d6efd !important;
+  color: white !important;
+  border: 1px solid #0a58ca !important;
+}
+
+/* Invited badge */
+.user-table td .badge.bg-info,
+.badge.bg-info {
+  background-color: #0dcaf0 !important;
+  color: white !important;
+  border: 1px solid #0aa2c0 !important;
+}
+
+/* Make icons in badges consistent */
+.badge i {
+  margin-right: 0.3rem !important;
+  font-size: 0.9rem !important;
+  display: inline-block !important;
+}
+
+/* Status column layout */
+.user-table td:nth-child(3) {
+  min-width: 130px !important;
+  padding: 0.75rem !important;
+  vertical-align: middle !important;
+}
+
+/* Hack to ensure status badges are displayed */
+.user-table tr[data-isadmin="false"] td:nth-child(3) .badge.bg-secondary {
+  display: inline-flex !important;
+  max-height: none !important;
+}
+
+/* Fix table rendering */
+.user-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+/* Additional debug styles for development */
+.debug-outline .user-table td {
+  outline: 1px solid red !important;
+}
+
+.debug-outline .badge {
+  outline: 2px solid green !important;
+} 

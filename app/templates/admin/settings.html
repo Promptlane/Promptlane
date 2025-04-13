@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin - Settings | {{settings.APP.NAME}}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">System Settings</h1>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>General Settings</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/admin/settings">
+                        <div class="mb-3">
+                            <label for="app_name" class="form-label">Application Name</label>
+                            <input type="text" class="form-control" id="app_name" name="app_name" value="{{settings.APP.NAME}}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="site_url" class="form-label">Site URL</label>
+                            <input type="url" class="form-control" id="site_url" name="site_url" value="https://{{settings.APP.NAME}}.example.com">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contact_email" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="contact_email" name="contact_email" value="support@{{settings.APP.NAME}}.com">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>Email Settings</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/admin/settings/email">
+                        <div class="mb-3">
+                            <label for="smtp_host" class="form-label">SMTP Host</label>
+                            <input type="text" class="form-control" id="smtp_host" name="smtp_host" value="smtp.example.com">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="smtp_port" class="form-label">SMTP Port</label>
+                            <input type="number" class="form-control" id="smtp_port" name="smtp_port" value="587">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="smtp_user" class="form-label">SMTP Username</label>
+                            <input type="text" class="form-control" id="smtp_user" name="smtp_user" value="noreply@{{settings.APP.NAME}}.example.com">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="smtp_password" class="form-label">SMTP Password</label>
+                            <input type="password" class="form-control" id="smtp_password" name="smtp_password">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Email Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin/dashboard.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Save settings functionality
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    if (saveSettingsBtn) {
+      saveSettingsBtn.addEventListener('click', function() {
+        // Show a loading indicator
+        saveSettingsBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+        saveSettingsBtn.disabled = true;
+        
+        // In a real implementation, you would send the form data to your API
+        // For now, we'll just simulate a save operation
+        setTimeout(() => {
+          // Reset button state
+          saveSettingsBtn.innerHTML = '<i class="bi bi-save"></i> Save Changes';
+          saveSettingsBtn.disabled = false;
+          
+          // Show success notification
+          showNotification('Settings saved successfully', 'success');
+        }, 1500);
+      });
+    }
+  });
+</script>
+{% endblock %} 

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Security | {{ settings.APP.NAME }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div class="header-brand">
+      <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+      </button>
+      <h1>{{ settings.APP.NAME }} Admin</h1>
+    </div>
+    <div class="header-actions">
+      <div class="search-container">
+        <input type="text" placeholder="Search..." class="admin-search">
+        <i class="bi bi-search"></i>
+      </div>
+      <div class="notifications">
+        <i class="bi bi-bell"></i>
+        <span class="badge">3</span>
+      </div>
+      <div class="admin-profile">
+        <img src="{{ url_for('static', path='img/avatar.png') }}" alt="Admin Avatar">
+        <span>{{ user.username }}</span>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-main">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar">
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="/admin/dashboard">
+              <i class="bi bi-speedometer2"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/users">
+              <i class="bi bi-people"></i>
+              <span>Users</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/teams">
+              <i class="bi bi-people-fill"></i>
+              <span>Teams</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/projects">
+              <i class="bi bi-kanban"></i>
+              <span>Projects</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/prompts">
+              <i class="bi bi-chat-left-text"></i>
+              <span>Prompts</span>
+            </a>
+          </li>
+          <li class="nav-section">
+            <span>Insights</span>
+          </li>
+          <li>
+            <a href="/admin/reports">
+              <i class="bi bi-bar-chart"></i>
+              <span>Reports</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/logs">
+              <i class="bi bi-journal-text"></i>
+              <span>Audit Logs</span>
+            </a>
+          </li>
+          <li class="nav-section">
+            <span>Configuration</span>
+          </li>
+          <li>
+            <a href="/admin/settings">
+              <i class="bi bi-gear"></i>
+              <span>Settings</span>
+            </a>
+          </li>
+          <li class="active">
+            <a href="/admin/security">
+              <i class="bi bi-shield-lock"></i>
+              <span>Security</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/admin/help">
+          <i class="bi bi-question-circle"></i>
+          <span>Help</span>
+        </a>
+        <a href="/logout">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-content">
+      <div class="page-header">
+        <h2>Security Settings</h2>
+        <div class="header-actions">
+          <button class="btn btn-primary" id="saveSecurityBtn">
+            <i class="bi bi-save"></i> Save Changes
+          </button>
+        </div>
+      </div>
+
+      <!-- Security Content -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Password Policy</h5>
+        </div>
+        <div class="card-body">
+          <form id="passwordPolicyForm">
+            <div class="mb-3">
+              <label for="minPasswordLength" class="form-label">Minimum Password Length</label>
+              <input type="number" class="form-control" id="minPasswordLength" value="8" min="6" max="32">
+            </div>
+            
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="requireUppercase" checked>
+              <label class="form-check-label" for="requireUppercase">Require Uppercase Letters</label>
+            </div>
+            
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="requireNumber" checked>
+              <label class="form-check-label" for="requireNumber">Require Numbers</label>
+            </div>
+            
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="requireSpecialChar" checked>
+              <label class="form-check-label" for="requireSpecialChar">Require Special Characters</label>
+            </div>
+            
+            <div class="mb-3">
+              <label for="passwordExpiryDays" class="form-label">Password Expiry (Days)</label>
+              <input type="number" class="form-control" id="passwordExpiryDays" value="90" min="0" max="365">
+              <small class="form-text text-muted">Set to 0 for no expiration</small>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Authentication</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="enable2FA">
+            <label class="form-check-label" for="enable2FA">Enable Two-Factor Authentication</label>
+            <small class="form-text text-muted d-block">Require all users to set up 2FA</small>
+          </div>
+          
+          <div class="mb-3">
+            <label for="sessionTimeout" class="form-label">Session Timeout (Minutes)</label>
+            <input type="number" class="form-control" id="sessionTimeout" value="60" min="5" max="1440">
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="enforceSingleSession">
+            <label class="form-check-label" for="enforceSingleSession">Enforce Single Session Per User</label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">IP Restrictions</h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">IP restriction settings will be available in a future update.</p>
+          
+          <div class="placeholder-content text-center py-3">
+            <i class="bi bi-globe" style="font-size: 2rem; color: #ccc;"></i>
+            <p class="mt-2">Coming Soon</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin/dashboard.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Save security settings functionality
+    const saveSecurityBtn = document.getElementById('saveSecurityBtn');
+    if (saveSecurityBtn) {
+      saveSecurityBtn.addEventListener('click', function() {
+        // Show a loading indicator
+        saveSecurityBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+        saveSecurityBtn.disabled = true;
+        
+        // In a real implementation, you would send the form data to your API
+        // For now, we'll just simulate a save operation
+        setTimeout(() => {
+          // Reset button state
+          saveSecurityBtn.innerHTML = '<i class="bi bi-save"></i> Save Changes';
+          saveSecurityBtn.disabled = false;
+          
+          // Show success notification
+          showNotification('Security settings saved successfully', 'success');
+        }, 1500);
+      });
+    }
+  });
+</script>
+{% endblock %} 

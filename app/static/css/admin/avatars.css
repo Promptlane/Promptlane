@@ -1,0 +1,137 @@
+/* User Avatar Styles */
+:root {
+  /* Avatar color variables */
+  --avatar-color-1-bg: #cfe2ff;
+  --avatar-color-1-text: #0a58ca;
+  --avatar-color-2-bg: #d1e7dd;
+  --avatar-color-2-text: #0f5132;
+  --avatar-color-3-bg: #fff3cd;
+  --avatar-color-3-text: #664d03;
+  --avatar-color-4-bg: #f8d7da;
+  --avatar-color-4-text: #842029;
+  --avatar-color-5-bg: #e0cffc;
+  --avatar-color-5-text: #6610f2;
+  --avatar-color-6-bg: #fde1cb;
+  --avatar-color-6-text: #fd7e14;
+}
+
+.avatar-sm, .avatar-md, .avatar-lg {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  background-color: #e9ecef !important;
+  color: #495057 !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+
+.avatar-sm {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+}
+
+.avatar-md {
+  width: 48px !important;
+  height: 48px !important;
+  font-size: 16px !important;
+}
+
+.avatar-lg {
+  width: 64px !important;
+  height: 64px !important;
+  font-size: 20px !important;
+}
+
+/* Color variants for avatars based on first character */
+.avatar-color-1 { background-color: var(--avatar-color-1-bg) !important; color: var(--avatar-color-1-text) !important; }
+.avatar-color-2 { background-color: var(--avatar-color-2-bg) !important; color: var(--avatar-color-2-text) !important; }
+.avatar-color-3 { background-color: var(--avatar-color-3-bg) !important; color: var(--avatar-color-3-text) !important; }
+.avatar-color-4 { background-color: var(--avatar-color-4-bg) !important; color: var(--avatar-color-4-text) !important; }
+.avatar-color-5 { background-color: var(--avatar-color-5-bg) !important; color: var(--avatar-color-5-text) !important; }
+.avatar-color-6 { background-color: var(--avatar-color-6-bg) !important; color: var(--avatar-color-6-text) !important; }
+
+/* Avatar with border */
+.avatar-bordered {
+  border: 2px solid #fff !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Admin badge for avatar */
+.avatar-with-badge {
+  position: relative !important;
+}
+
+.avatar-badge {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  background-color: #0d6efd !important;
+  border: 2px solid #fff !important;
+}
+
+/* For admin header avatar */
+.admin-profile .profile-btn img.profile-avatar,
+.admin-profile .avatar-placeholder {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  margin-right: 8px !important;
+  border: 2px solid rgba(255,255,255,0.2) !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  top: -1px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Make admin profile button flex container */
+.admin-profile .profile-btn {
+  display: flex !important;
+  align-items: center !important;
+  padding: 6px 12px !important;
+  border-radius: 30px !important;
+  background-color: rgba(255,255,255,0.1) !important;
+  transition: background-color 0.2s !important;
+}
+
+.admin-profile .profile-btn:hover {
+  background-color: rgba(255,255,255,0.15) !important;
+}
+
+/* Make username text properly aligned */
+.admin-profile .profile-btn span {
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 120px !important;
+}
+
+/* Default color for header avatar placeholder if not already colored */
+.admin-profile .avatar-placeholder {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+  /* Note: We don't set background/text color here, 
+     let it inherit from color classes or JS will apply it */
+}
+
+/* Avatar placeholder for when image is not available */
+.avatar-placeholder {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #e9ecef !important;
+  color: #495057 !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  border-radius: 50% !important;
+} 

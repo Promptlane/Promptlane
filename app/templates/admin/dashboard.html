@@ -1,0 +1,237 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard | {{settings.APP.NAME}}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Admin Dashboard</h1>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Users</h5>
+                            <h2 class="card-text">{{ stats.total_users }}</h2>
+                            <p class="text-muted">Active: {{ stats.active_users }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Teams</h5>
+                            <h2 class="card-text">{{ stats.total_teams }}</h2>
+                            <p class="text-muted">Active: {{ stats.active_teams }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Projects</h5>
+                            <h2 class="card-text">{{ stats.total_projects }}</h2>
+                            <p class="text-muted">Active: {{ stats.active_projects }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Prompts</h5>
+                            <h2 class="card-text">{{ stats.total_prompts }}</h2>
+                            <p class="text-muted">Active: {{ stats.active_prompts }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h2>Recent Activity</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for activity in recent_activities %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ activity.title }}</h6>
+                                        <small class="text-muted">{{ activity.timestamp }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ activity.description }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h2>System Status</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Database Status</h6>
+                                        <span class="badge bg-success">Online</span>
+                                    </div>
+                                    <p class="mb-1">Connected to PostgreSQL</p>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Email Service</h6>
+                                        <span class="badge bg-success">Online</span>
+                                    </div>
+                                    <p class="mb-1">SMTP server is running</p>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Storage</h6>
+                                        <span class="badge bg-info">{{ stats.storage_usage }}% used</span>
+                                    </div>
+                                    <p class="mb-1">{{ stats.used_storage }} of {{ stats.total_storage }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Usage Trends Chart
+    const trendCtx = document.getElementById('usageTrendsChart').getContext('2d');
+    const usageTrendsChart = new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [
+          {
+            label: 'Prompts Created',
+            data: [65, 59, 80, 81],
+            borderColor: '#0dcaf0',
+            backgroundColor: 'rgba(13, 202, 240, 0.1)',
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: 'API Calls',
+            data: [28, 48, 40, 19],
+            borderColor: '#ffc107',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: 'Active Users',
+            data: [45, 25, 40, 62],
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            tension: 0.3,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'end'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              drawBorder: false
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+    
+    // Activity detail buttons
+    document.querySelectorAll('.btn-icon').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const user = row.querySelector('.avatar-sm').textContent.trim();
+        const title = row.querySelector('.fw-medium').textContent.trim();
+        const type = row.querySelector('.badge').textContent.trim();
+        const time = row.querySelector('.text-nowrap').textContent.trim();
+        
+        // Populate and show modal with activity details
+        const modalContent = document.getElementById('activityDetailContent');
+        modalContent.innerHTML = `
+          <div class="d-flex align-items-center mb-3">
+            <div class="avatar-md avatar-color-${Math.floor(Math.random() * 6) + 1} me-3">${user}</div>
+            <div>
+              <h5 class="mb-1">${title}</h5>
+              <div class="text-muted">${time}</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <span class="badge rounded-pill ${row.querySelector('.badge').className.split(' ').filter(c => c.startsWith('bg-')).join(' ')}">${type}</span>
+          </div>
+          <hr>
+          <h6>Additional Information</h6>
+          <p>Information about this activity will appear here. In a production environment, this would be fetched from the server based on the activity ID.</p>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('activityDetailModal'));
+        modal.show();
+      });
+    });
+  });
+</script>
+{% endblock %}
+
+<!-- Activity Detail Modal -->
+<div class="modal fade" id="activityDetailModal" tabindex="-1" aria-labelledby="activityDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="activityDetailModalLabel">Activity Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="activityDetailContent">
+        <!-- Activity details will be populated dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div> 

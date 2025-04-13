@@ -1,0 +1,70 @@
+/* Admin Base Styles */
+
+/* General Styles */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f5f7fa;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Admin Container */
+.admin-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f7fb;
+  color: var(--admin-dark);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Admin Main Layout */
+.admin-main {
+  display: flex;
+  flex: 1;
+  margin-top: var(--admin-header-height);
+  min-height: calc(100vh - var(--header-height));
+}
+
+/* Admin Content */
+.admin-content {
+  flex: 1;
+  padding: var(--admin-content-padding);
+  margin-left: var(--admin-sidebar-width);
+  width: calc(100% - var(--admin-sidebar-width));
+  transition: margin-left var(--transition-speed) ease;
+}
+
+.body-sidebar-collapsed .admin-content {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--admin-dark);
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .admin-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .body-sidebar-collapsed .admin-header,
+  .body-sidebar-collapsed .admin-content {
+    margin-left: 0;
+    left: 0;
+  }
+} 

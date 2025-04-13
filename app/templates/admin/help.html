@@ -1,0 +1,85 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin - Help | {{settings.APP.NAME}}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Admin Help Center</h1>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>Getting Started</h2>
+                </div>
+                <div class="card-body">
+                    <p>Welcome to the {{settings.APP.NAME}} Admin Help Center. This guide will help you navigate and use the admin interface effectively.</p>
+                    
+                    <h3>Navigation</h3>
+                    <p>The admin interface is organized into several sections:</p>
+                    <ul>
+                        <li><strong>Dashboard</strong>: Overview of system status and key metrics</li>
+                        <li><strong>Users</strong>: Manage user accounts and permissions</li>
+                        <li><strong>Teams</strong>: Create and manage teams</li>
+                        <li><strong>Projects</strong>: Monitor and manage projects</li>
+                        <li><strong>Prompts</strong>: View and manage prompts</li>
+                        <li><strong>Settings</strong>: Configure system settings</li>
+                        <li><strong>Security</strong>: Manage security settings and access controls</li>
+                        <li><strong>Logs</strong>: View system logs and activity</li>
+                        <li><strong>Reports</strong>: Generate and view reports</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>Common Tasks</h2>
+                </div>
+                <div class="card-body">
+                    <h3>Managing Users</h3>
+                    <p>To manage users:</p>
+                    <ol>
+                        <li>Navigate to the Users section</li>
+                        <li>Use the search bar to find specific users</li>
+                        <li>Click on a user to view details and make changes</li>
+                        <li>Use the action buttons to modify user permissions or status</li>
+                    </ol>
+                    
+                    <h3>Creating Teams</h3>
+                    <p>To create a new team:</p>
+                    <ol>
+                        <li>Go to the Teams section</li>
+                        <li>Click the "Create Team" button</li>
+                        <li>Fill in the team details</li>
+                        <li>Add team members and set permissions</li>
+                        <li>Save the team</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>Support</h2>
+                </div>
+                <div class="card-body">
+                    <p>If you need additional help:</p>
+                    <ul>
+                        <li><i class="bi bi-envelope me-2"></i> support@{{settings.APP.NAME}}.com</li>
+                        <li><i class="bi bi-book me-2"></i> Documentation: docs.{{settings.APP.NAME}}.com</li>
+                        <li><i class="bi bi-github me-2"></i> GitHub Issues</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin/dashboard.js') }}"></script>
+{% endblock %} 
