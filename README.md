@@ -1,98 +1,62 @@
-# Promptlane
+# PromptLane
 
-A collaborative platform for managing, versioning, and sharing AI prompts.
+A modern platform for managing and versioning AI prompts, built with FastAPI.
 
-![Promptlane Screenshot](docs/images/screenshot.png)
+## 🚀 Quick Start
 
-## Features
+```bash
+# Clone the repository
+git clone https://github.com/promptlane/promptlane.git
+cd promptlane
 
-- **Organize** prompts into projects
-- **Version** prompt templates
-- **Collaborate** with team members
-- **Track** prompt usage and changes
-- **API** for integration with your applications
+# Start with Docker
+docker compose up -d
 
-## Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- FastAPI
-- SQLAlchemy
-
-### Installation
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/yourusername/promptlane.git
-   cd promptlane
-   ```
-
-2. Create a virtual environment
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the application
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-5. Open your browser and navigate to http://localhost:8000
-
-## Documentation
-
-For detailed documentation, see the [docs folder](docs/README.md).
-
-## Email Templates
-
-Promptlane uses a template-based email system for all outgoing emails. The templates are located in `app/templates/email/` and use Jinja2 for rendering.
-
-### Template Structure
-
-- **base.html**: Base template with common styling and layout
-- **invitation.html**: Template for user invitation emails
-- **password_reset.html**: Template for password reset emails
-- **notification.html**: Template for general notifications
-
-For detailed documentation on the email template system, see [Email Templates Documentation](docs/email_templates.md).
-
-### Customizing Templates
-
-To customize email templates:
-
-1. Edit the template files in `app/templates/email/`
-2. Templates use Jinja2 templating language with blocks for different sections
-3. The base template includes common styling that can be extended
-
-### Environment Configuration
-
-Email configuration is managed through environment variables:
-
-```
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_USER=noreply@promptlane.example.com
-EMAIL_PASSWORD=your-secure-password
-EMAIL_FROM=Promptlane <noreply@promptlane.example.com>
-SITE_URL=https://promptlane.example.com
+# Run migrations
+docker compose exec app alembic upgrade head
 ```
 
-## API Reference
+Visit `http://localhost:8000/docs` for API documentation.
 
-The API documentation is available at http://localhost:8000/docs once the application is running.
+## ⚙️ Configuration
 
-## Contributing
+1. Copy environment template:
+   ```bash
+   cp .env.example .env
+   ```
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+2. Update required variables:
+   ```env
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   POSTGRES_DB=promptlane
+   JWT_SECRET_KEY=your-secret-key
+   ```
 
-## License
+## 🔧 Development
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
-This project is licensed under the MIT License. 
+```bash
+# Start services
+docker compose up -d
+
+# Create migration
+docker compose exec app alembic revision --autogenerate -m "description"
+
+# Run tests
+docker compose exec app pytest
+```
+
+## 📚 Documentation
+
+- API Docs: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Submit pull request
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) for details. 
