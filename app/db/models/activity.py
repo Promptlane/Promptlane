@@ -19,6 +19,7 @@ class ActivityType(str, Enum):
     CREATE_PROMPT = "create_prompt"
     UPDATE_PROMPT = "update_prompt"
     DELETE_PROMPT = "delete_prompt"
+    PROJECT_SEARCHED = "project_search"
     CREATE_PROMPT_VERSION = "create_prompt_version"
     EXECUTE_PROMPT = "execute_prompt"
     VIEW_DASHBOARD = "view_dashboard"

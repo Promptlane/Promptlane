@@ -1,7 +1,7 @@
 """
 Projects web routes
 """
-from fastapi import APIRouter, Request, HTTPException, status, Depends, Query
+from fastapi import APIRouter, Request, HTTPException, status, Depends, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templates import templates
 from typing import List, Dict, Any, Optional
@@ -12,7 +12,7 @@ from app.managers.project_manager import ProjectManager
 from app.managers.prompt_manager import PromptManager
 from app.managers.activity_manager import ActivityManager
 from app.db import models
-from app.models.activity import ActivityType
+from app.db.models.activity import ActivityType
 from app.utils.format_date import format_datetime, format_relative_time
 
 # Create router
@@ -147,10 +147,10 @@ async def search_projects_page(
     )
     
     # Log activity
-    activity_manager.create(
-        type=ActivityType.PROJECT_SEARCHED,
-        description=f"Searched for projects with query: {query}",
-        user_id=user_id
+    activity_manager.create_activity(
+        user_id=user_id,
+        activity_type=ActivityType.PROJECT_SEARCHED,
+        details={"query": query}
     )
     
     return templates.TemplateResponse(
@@ -162,4 +162,54 @@ async def search_projects_page(
             "limit": limit,
             "offset": offset
         }
+    )
+
+@router.post("", response_class=HTMLResponse)
+@require_auth()
+async def create_project(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(None),
+    project_key: str = Form(None),
+    project_manager: ProjectManager = Depends(get_project_manager),
+    activity_manager: ActivityManager = Depends(get_activity_manager)
+):
+    """Create a new project"""
+    user_id = uuid.UUID(request.session["user_id"])
+    
+    # Generate project key from name if not provided
+    if not project_key:
+        project_key = name.lower().replace(" ", "-")
+    
+    # Create the project
+    project, error = project_manager.create_project(
+        project_key=project_key,
+        name=name,
+        description=description, 
+        created_by=user_id
+    )
+    
+    if error:
+        # Return to the projects page with an error message
+        return templates.TemplateResponse(
+            "projects/list.html",
+            {
+                "request": request,
+                "user": request.session["user"],
+                "projects": project_manager.get_user_projects(user_id),
+                "error": error
+            }
+        )
+    
+    # Log activity
+    activity_manager.create_activity(
+        user_id=user_id,
+        activity_type=ActivityType.CREATE_PROJECT,
+        details={"project_id": str(project.id), "name": name}
+    )
+    
+    # Redirect to the project details page
+    return RedirectResponse(
+        url=f"/projects/{project.id}",
+        status_code=status.HTTP_303_SEE_OTHER
     ) 
