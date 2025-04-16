@@ -123,10 +123,10 @@ async def register(
     }
     
     # Log registration activity
-    activity_manager.create(
-        type=ActivityType.REGISTER,
-        description=f"User {username} registered",
-        user_id=user.id
+    activity_manager.create_activity(
+        user_id=user.id,
+        activity_type=ActivityType.REGISTER,
+        details={"description": f"User {username} registered"}
     )
     
     # Redirect to home page
@@ -143,10 +143,10 @@ async def logout(request: Request):
         try:
             user_uuid = uuid.UUID(user_id)
             username = request.session.get("username", "Unknown")
-            activity_manager.create(
-                type=ActivityType.LOGOUT,
-                description=f"User {username} logged out",
-                user_id=user_uuid
+            activity_manager.create_activity(
+                user_id=user_uuid,
+                activity_type=ActivityType.LOGOUT,
+                details={"description": f"User {username} logged out"}
             )
         except:
             pass

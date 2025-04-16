@@ -2,8 +2,8 @@
 Projects web routes
 """
 from fastapi import APIRouter, Request, HTTPException, status, Depends, Query
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse
+from app.templates import templates
 from typing import List, Dict, Any, Optional
 import uuid
 
@@ -17,9 +17,6 @@ from app.utils.format_date import format_datetime, format_relative_time
 
 # Create router
 router = APIRouter(tags=["projects-web"])
-
-# Templates
-templates = Jinja2Templates(directory="app/templates")
 
 def get_project_manager() -> ProjectManager:
     """Dependency to get project manager instance"""

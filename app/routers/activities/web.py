@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 import uuid
 
 from app.dependencies.auth import require_auth
 from app.managers.activity_manager import ActivityManager
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 def get_activity_manager() -> ActivityManager:
     """Dependency to get ActivityManager instance"""

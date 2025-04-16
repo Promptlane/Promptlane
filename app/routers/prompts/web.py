@@ -1,9 +1,9 @@
 """
 Prompts web routes
 """
-from fastapi import APIRouter, Request, HTTPException, status, Depends
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Request, HTTPException, status, Depends, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from app.templates import templates
 from typing import List, Dict, Any, Optional
 import uuid
 
@@ -16,9 +16,6 @@ from app.dependencies.auth import require_auth
 
 # Create router
 router = APIRouter(tags=["prompts-web"])
-
-# Templates
-templates = Jinja2Templates(directory="app/templates")
 
 def get_prompt_manager() -> PromptManager:
     """Dependency to get prompt manager instance"""

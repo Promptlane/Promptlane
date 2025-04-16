@@ -2,7 +2,7 @@
 Admin view handlers - Template rendering logic for admin routes
 """
 from fastapi import Request, Depends, HTTPException, status, APIRouter
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -17,9 +17,7 @@ from app.managers.prompt_manager import PromptManager
 from app.managers.activity_manager import ActivityManager
 from app.routers.auth import get_current_user, is_admin
 from app.utils import format_date
-
-# Initialize templates
-templates = Jinja2Templates(directory="app/templates")
+from app.templates import templates
 
 router = APIRouter(tags=["Admin Views"])
 
