@@ -14,11 +14,15 @@ from app.models.activity import Activity, ActivitySummary, UserStats, ActivityRe
 # Create router
 router = APIRouter(tags=["dashboard-api"])
 
+def get_activity_manager() -> ActivityManager:
+    """Dependency to get activity manager instance"""
+    return ActivityManager()
+
 @router.get("/stats", response_model=Dict[str, Any])
 @require_auth()
 async def get_dashboard_stats(
     request: Request,
-    activity_manager: ActivityManager = Depends(ActivityManager)
+    activity_manager: ActivityManager = Depends(get_activity_manager)
 ):
     """Get dashboard statistics for the current user"""
     user_id = uuid.UUID(request.session["user_id"])
@@ -39,7 +43,7 @@ async def get_dashboard_stats(
 async def get_user_activities_endpoint(
     request: Request,
     limit: int = 10,
-    activity_manager: ActivityManager = Depends(ActivityManager)
+    activity_manager: ActivityManager = Depends(get_activity_manager)
 ):
     """Get recent activities for the current user"""
     user_id = uuid.UUID(request.session["user_id"])
@@ -63,7 +67,7 @@ async def get_user_activities_endpoint(
 @require_auth()
 async def get_activity_by_type_endpoint(
     request: Request,
-    activity_manager: ActivityManager = Depends(ActivityManager)
+    activity_manager: ActivityManager = Depends(get_activity_manager)
 ):
     """Get activity breakdown by type for the current user"""
     user_id = uuid.UUID(request.session["user_id"])
@@ -80,7 +84,7 @@ async def get_activity_by_type_endpoint(
 async def get_activity_by_date_endpoint(
     request: Request,
     days: int = 30,
-    activity_manager: ActivityManager = Depends(ActivityManager)
+    activity_manager: ActivityManager = Depends(get_activity_manager)
 ):
     """Get activity counts by date for the current user"""
     user_id = uuid.UUID(request.session["user_id"])

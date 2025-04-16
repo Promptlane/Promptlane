@@ -4,15 +4,14 @@ Global error handlers for the FastAPI application
 import traceback
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
 from app.logger import get_logger
 from app.utils import JSONEncoder
 
-# Initialize templates and logger
-templates = Jinja2Templates(directory="app/templates")
+# Initialize logger
 logger = get_logger(__name__)
 
 # Custom JSONResponse that uses our UUID-aware encoder

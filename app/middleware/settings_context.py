@@ -9,7 +9,11 @@ class SettingsContextMiddleware(BaseHTTPMiddleware):
     """Middleware to add settings to template context"""
     
     async def dispatch(self, request: Request, call_next):
+        # Add settings to the request state before processing
+        request.state.settings = settings
+        
+        # Process the request
         response = await call_next(request)
-        if hasattr(response, "context"):
-            response.context["settings"] = settings
+        
+        # Return the response
         return response 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, status, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 from sqlalchemy.orm import Session
 import uuid
 
@@ -10,7 +10,6 @@ from app.managers.user_manager import UserManager
 from app.managers.activity_manager import ActivityManager
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):

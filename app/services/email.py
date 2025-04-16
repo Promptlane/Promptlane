@@ -24,12 +24,12 @@ from app.config import settings
 email_config = ConnectionConfig(
     MAIL_USERNAME=settings.EMAIL.USER,
     MAIL_PASSWORD=settings.EMAIL.PASSWORD,
-    MAIL_FROM=settings.EMAIL.FROM,
+    MAIL_FROM=settings.EMAIL.FROM if not settings.EMAIL.FROM.endswith('.local') else "noreply@example.com",
     MAIL_PORT=settings.EMAIL.PORT,
     MAIL_SERVER=settings.EMAIL.HOST,
     MAIL_FROM_NAME=settings.APP.NAME,
-    MAIL_TLS=settings.EMAIL.TLS,
-    MAIL_SSL=settings.EMAIL.SSL,
+    MAIL_STARTTLS=settings.EMAIL.TLS,
+    MAIL_SSL_TLS=settings.EMAIL.SSL,
     USE_CREDENTIALS=settings.EMAIL.USE_CREDENTIALS,
     VALIDATE_CERTS=settings.EMAIL.VALIDATE_CERTS
 )
