@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Request, Depends, Query
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 from typing import Dict, List, Optional
 import app.db as db
 from app.utils import format_date, extract_variables
 from app.dependencies.auth import require_auth
 
 router = APIRouter(tags=["Search"])
-templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/search")
 @require_auth()

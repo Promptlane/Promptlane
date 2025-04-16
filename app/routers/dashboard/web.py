@@ -3,7 +3,7 @@ Dashboard web routes
 """
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 from typing import List, Dict, Any
 import uuid
 
@@ -16,9 +16,6 @@ from app.models.activity import ActivityType
 
 # Create router
 router = APIRouter(tags=["dashboard-web"])
-
-# Templates
-templates = Jinja2Templates(directory="app/templates")
 
 def get_activity_manager() -> ActivityManager:
     """Dependency to get activity manager instance"""
