@@ -8,7 +8,7 @@ from typing import List, Dict, Type
 # Third-party imports
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -77,9 +77,6 @@ def create_app() -> FastAPI:
 
     # Mount static files
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-    # Set up templates
-    templates = Jinja2Templates(directory="app/templates")
     
     # Register error handlers
     app.add_exception_handler(404, not_found_error)

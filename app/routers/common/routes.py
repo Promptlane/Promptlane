@@ -6,7 +6,7 @@ import traceback
 import json
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
+from app.templates import templates
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -18,7 +18,6 @@ from app.utils import JSONEncoder
 
 # Initialize router and templates
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 logger = get_logger(__name__)
 
 # Custom JSONResponse that uses our UUID-aware encoder
@@ -53,9 +52,9 @@ async def root(request: Request):
     if "user" in request.session:
         return templates.TemplateResponse(
             "home.html",
-            {"request": request, "user": request.session["user"]}
+            {"request": request, "user": request.session["user"], "settings": request.state.settings}
         )
     return templates.TemplateResponse(
         "home.html",
-        {"request": request}
+        {"request": request, "settings": request.state.settings}
     ) 

@@ -215,7 +215,7 @@ class TeamManager(BaseManager):
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        role: models.TeamRole = models.TeamRole.MEMBER
+        role: models.TeamRole = models.TeamRole.VIEWER
     ) -> bool:
         """Add a user to a team"""
         try:

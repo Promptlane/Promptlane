@@ -22,12 +22,6 @@ services:
       start_period: 40s
     env_file:
       - .env.${ENVIRONMENT:-development}
-    environment:
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=promptlane
   
   db:
     profiles: ["development", "production"]
@@ -35,7 +29,7 @@ services:
     volumes:
       - promptlane_db_data:/var/lib/postgresql/data
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5432:5342"
     networks:
       - promptlane-network
     healthcheck:
@@ -44,7 +38,6 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    command: postgres -c 'password_encryption=scram-sha-256'
     env_file:
       - .env.${ENVIRONMENT:-development}
   

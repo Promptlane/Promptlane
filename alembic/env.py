@@ -34,8 +34,6 @@ from app.db.database import db
 # Load environment variables from .env file
 load_dotenv()
 
-# Log environment variables
-
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -64,8 +62,15 @@ target_metadata = Base.metadata
 # ... etc.
 
 def get_url():
-    """Get the database URL from the database singleton"""
-    return str(db.engine.url)
+    """Get the database URL from environment or database singleton"""
+    env_url = os.getenv("DATABASE_URL")
+    if env_url:
+        return env_url
+    try:
+        return str(db.engine.url)
+    except:
+        logger.warning("Database engine not initialized, using DATABASE_URL environment variable")
+        return db_url
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -79,7 +84,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = get_url()
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -99,7 +104,6 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = get_url()
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

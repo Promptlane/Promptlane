@@ -25,6 +25,10 @@ def get_project_manager() -> ProjectManager:
     """Dependency to get project manager instance"""
     return ProjectManager()
 
+def get_prompt_manager() -> PromptManager:
+    """Dependency to get prompt manager instance"""
+    return PromptManager()
+
 def get_activity_manager() -> ActivityManager:
     """Dependency to get activity manager instance"""
     return ActivityManager()
@@ -34,7 +38,7 @@ def get_activity_manager() -> ActivityManager:
 async def projects_page(
     request: Request,
     project_manager: ProjectManager = Depends(get_project_manager),
-    prompt_manager: PromptManager = Depends(PromptManager)
+    prompt_manager: PromptManager = Depends(get_prompt_manager)
 ):
     """Render the projects list page"""
     user_id = uuid.UUID(request.session["user_id"])
@@ -68,7 +72,7 @@ async def project_detail_page(
     request: Request,
     project_id: str,
     project_manager: ProjectManager = Depends(get_project_manager),
-    prompt_manager: PromptManager = Depends(PromptManager)
+    prompt_manager: PromptManager = Depends(get_prompt_manager)
 ):
     """Render the project detail page"""
     try:
