@@ -212,4 +212,164 @@ async def create_project(
     return RedirectResponse(
         url=f"/projects/{project.id}",
         status_code=status.HTTP_303_SEE_OTHER
+    )
+
+@router.post("/{project_id}", response_class=HTMLResponse)
+@require_auth()
+async def update_project(
+    request: Request,
+    project_id: str,
+    name: str = Form(...),
+    description: str = Form(None),
+    project_manager: ProjectManager = Depends(get_project_manager),
+    prompt_manager: PromptManager = Depends(get_prompt_manager),
+    activity_manager: ActivityManager = Depends(get_activity_manager)
+):
+    """Update a project"""
+    try:
+        project_uuid = uuid.UUID(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+    
+    user_id = uuid.UUID(request.session["user_id"])
+    
+    # Verify project ownership
+    project = project_manager.get_project(project_uuid)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+    
+    if project.created_by != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this project"
+        )
+    
+    # Update the project
+    updated_project, error = project_manager.update_project(
+        project_id=project_uuid,
+        name=name,
+        description=description, 
+        updated_by=user_id
+    )
+    
+    if error:
+        # Return to the project details page with an error message
+        prompts = prompt_manager.get_project_prompts(project_uuid)
+        return templates.TemplateResponse(
+            "projects/detail.html",
+            {
+                "request": request,
+                "user": request.session["user"],
+                "project": {
+                    "id": str(project.id),
+                    "name": project.name,
+                    "description": project.description,
+                    "created_at": format_relative_time(project.created_at),
+                    "updated_at": format_relative_time(project.updated_at) if project.updated_at else None,
+                    "created_by": project.creator.username if project.creator else "Unknown"
+                },
+                "prompts": [
+                    {
+                        "id": str(prompt.id),
+                        "name": prompt.name,
+                        "description": prompt.description,
+                        "created_at": format_relative_time(prompt.created_at),
+                        "updated_at": format_relative_time(prompt.updated_at) if prompt.updated_at else None,
+                        "enabled": prompt.is_active if hasattr(prompt, 'is_active') else True,
+                        "version": prompt.version if hasattr(prompt, 'version') else 1,
+                        "has_history": len(prompt.versions) > 1 if hasattr(prompt, 'versions') else False,
+                        "variables": prompt.variables if hasattr(prompt, 'variables') else [],
+                        "last_used": format_relative_time(prompt.last_used) if hasattr(prompt, 'last_used') and prompt.last_used else None
+                    }
+                    for prompt in prompts
+                ],
+                "error": error
+            }
+        )
+    
+    # Log activity
+    activity_manager.create_activity(
+        user_id=user_id,
+        activity_type=ActivityType.UPDATE_PROJECT,
+        details={"project_id": str(updated_project.id), "name": name}
+    )
+    
+    # Redirect to the project details page
+    return RedirectResponse(
+        url=f"/projects/{project_uuid}",
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+
+@router.post("/{project_id}/delete", response_class=HTMLResponse)
+@require_auth()
+async def delete_project_form(
+    request: Request,
+    project_id: str,
+    project_manager: ProjectManager = Depends(get_project_manager),
+    activity_manager: ActivityManager = Depends(get_activity_manager)
+):
+    """Handle form-based deletion for projects (for HTML forms that can't use DELETE method)"""
+    try:
+        project_uuid = uuid.UUID(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+    
+    user_id = uuid.UUID(request.session["user_id"])
+    
+    # Verify project ownership
+    project = project_manager.get_project(project_uuid)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+    
+    if project.created_by != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this project"
+        )
+    
+    # Delete the project
+    success = project_manager.delete_project(project_uuid)
+    
+    if not success:
+        # Return to the project details page with an error message
+        return templates.TemplateResponse(
+            "projects/detail.html",
+            {
+                "request": request,
+                "user": request.session["user"],
+                "project": {
+                    "id": str(project.id),
+                    "name": project.name,
+                    "description": project.description,
+                    "created_at": format_relative_time(project.created_at),
+                    "updated_at": format_relative_time(project.updated_at) if project.updated_at else None,
+                    "created_by": project.creator.username if project.creator else "Unknown"
+                },
+                "error": "Failed to delete project"
+            }
+        )
+    
+    # Log activity
+    activity_manager.create_activity(
+        user_id=user_id,
+        activity_type=ActivityType.DELETE_PROJECT,
+        details={"project_id": str(project_uuid), "name": project.name}
+    )
+    
+    # Redirect to the projects list page
+    return RedirectResponse(
+        url="/projects",
+        status_code=status.HTTP_303_SEE_OTHER
     ) 

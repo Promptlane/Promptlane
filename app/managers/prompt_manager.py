@@ -220,7 +220,8 @@ class PromptManager(BaseManager):
 
     def get_project_prompts_count(self, project_id: uuid.UUID) -> int:
         """Get the count of prompts in a project"""
-        return self.get_multi_by_field('project_id', project_id).count()
+        prompts = self.get_multi_by_field('project_id', project_id)
+        return len(prompts)
 
     def _log_activity(self, user_id: uuid.UUID, activity_type: models.ActivityType, details: Dict[str, Any]):
         """Log prompt activity"""
