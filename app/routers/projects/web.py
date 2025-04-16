@@ -304,4 +304,72 @@ async def update_project(
     return RedirectResponse(
         url=f"/projects/{project_uuid}",
         status_code=status.HTTP_303_SEE_OTHER
+    )
+
+@router.post("/{project_id}/delete", response_class=HTMLResponse)
+@require_auth()
+async def delete_project_form(
+    request: Request,
+    project_id: str,
+    project_manager: ProjectManager = Depends(get_project_manager),
+    activity_manager: ActivityManager = Depends(get_activity_manager)
+):
+    """Handle form-based deletion for projects (for HTML forms that can't use DELETE method)"""
+    try:
+        project_uuid = uuid.UUID(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+    
+    user_id = uuid.UUID(request.session["user_id"])
+    
+    # Verify project ownership
+    project = project_manager.get_project(project_uuid)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+    
+    if project.created_by != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this project"
+        )
+    
+    # Delete the project
+    success = project_manager.delete_project(project_uuid)
+    
+    if not success:
+        # Return to the project details page with an error message
+        return templates.TemplateResponse(
+            "projects/detail.html",
+            {
+                "request": request,
+                "user": request.session["user"],
+                "project": {
+                    "id": str(project.id),
+                    "name": project.name,
+                    "description": project.description,
+                    "created_at": format_relative_time(project.created_at),
+                    "updated_at": format_relative_time(project.updated_at) if project.updated_at else None,
+                    "created_by": project.creator.username if project.creator else "Unknown"
+                },
+                "error": "Failed to delete project"
+            }
+        )
+    
+    # Log activity
+    activity_manager.create_activity(
+        user_id=user_id,
+        activity_type=ActivityType.DELETE_PROJECT,
+        details={"project_id": str(project_uuid), "name": project.name}
+    )
+    
+    # Redirect to the projects list page
+    return RedirectResponse(
+        url="/projects",
+        status_code=status.HTTP_303_SEE_OTHER
     ) 
