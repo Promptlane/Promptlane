@@ -34,6 +34,13 @@ class ActivityType(str, Enum):
     REMOVE_TEAM_MEMBER = "remove_team_member"
     UPDATE_TEAM_MEMBER_ROLE = "update_team_member_role"
     ADD_PROJECT_TO_TEAM = "add_project_to_team"
+    # Comment related activities
+    COMMENT_CREATED = "comment_created"
+    COMMENT_UPDATED = "comment_updated"
+    COMMENT_DELETED = "comment_deleted"
+    REPLY_CREATED = "reply_created"
+    REPLY_UPDATED = "reply_updated"
+    REPLY_DELETED = "reply_deleted"
 
 class Activity(BaseModel):
     __tablename__ = "activities"
