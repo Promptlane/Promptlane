@@ -133,9 +133,19 @@ async def project_detail_page(
                             if prompt.updated_at
                             else None
                         ),
-                        "created_by": prompt.creator.username if hasattr(prompt, "creator") and prompt.creator else "Unknown",
-                        "updated_by": prompt.updater.username if hasattr(prompt, "updater") and prompt.updater else "Unknown",
-                        "enabled": prompt.is_active if hasattr(prompt, "is_active") else True,
+                        "created_by": (
+                            prompt.creator.username
+                            if hasattr(prompt, "creator") and prompt.creator
+                            else "Unknown"
+                        ),
+                        "updated_by": (
+                            prompt.updater.username
+                            if hasattr(prompt, "updater") and prompt.updater
+                            else "Unknown"
+                        ),
+                        "enabled": (
+                            prompt.is_active if hasattr(prompt, "is_active") else True
+                        ),
                         "version": prompt.version,
                         "has_history": (
                             len(prompt.versions) > 1
@@ -311,8 +321,16 @@ async def update_project(
                                 if prompt.updated_at
                                 else None
                             ),
-                            "created_by": prompt.creator.username if hasattr(prompt, "creator") and prompt.creator else "Unknown",
-                            "updated_by": prompt.updater.username if hasattr(prompt, "updater") and prompt.updater else "Unknown",
+                            "created_by": (
+                                prompt.creator.username
+                                if hasattr(prompt, "creator") and prompt.creator
+                                else "Unknown"
+                            ),
+                            "updated_by": (
+                                prompt.updater.username
+                                if hasattr(prompt, "updater") and prompt.updater
+                                else "Unknown"
+                            ),
                             "enabled": (
                                 prompt.is_active
                                 if hasattr(prompt, "is_active")
@@ -540,8 +558,10 @@ async def project_prompt_detail(
     prompt_manager: PromptManager = Depends(get_prompt_manager),
 ):
     """View a specific prompt within a project"""
-    logger.info(f"Accessing prompt detail view: project_id={project_id}, prompt_id={prompt_id}")
-    
+    logger.info(
+        f"Accessing prompt detail view: project_id={project_id}, prompt_id={prompt_id}"
+    )
+
     try:
         project_uuid = uuid.UUID(project_id)
         logger.debug(f"Valid project UUID: {project_uuid}")
@@ -550,7 +570,7 @@ async def project_prompt_detail(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID format"
         )
-    
+
     try:
         prompt_uuid = uuid.UUID(prompt_id)
         logger.debug(f"Valid prompt UUID: {prompt_uuid}")
@@ -559,7 +579,7 @@ async def project_prompt_detail(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid prompt ID format"
         )
-    
+
     # Verify project ownership
     user_id = uuid.UUID(request.session["user_id"])
     logger.debug(f"User ID: {user_id}")
@@ -569,14 +589,16 @@ async def project_prompt_detail(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     if project.created_by != user_id:
-        logger.warning(f"Unauthorized access attempt to project {project_uuid} by user {user_id}")
+        logger.warning(
+            f"Unauthorized access attempt to project {project_uuid} by user {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this project",
         )
-    
+
     # Get the prompt
     logger.debug(f"Fetching prompt: {prompt_uuid}")
     prompt = prompt_manager.get_prompt(prompt_uuid)
@@ -585,7 +607,7 @@ async def project_prompt_detail(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
         )
-    
+
     # Verify that the prompt belongs to the project
     if prompt.project_id != project_uuid:
         logger.error(f"Prompt {prompt_uuid} does not belong to project {project_uuid}")
@@ -593,45 +615,75 @@ async def project_prompt_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Prompt does not belong to this project",
         )
-    
-    logger.debug(f"Prompt found: id={prompt.id}, name={prompt.name}, version={getattr(prompt, 'version', 'N/A')}")
+
+    logger.debug(
+        f"Prompt found: id={prompt.id}, name={prompt.name}, version={getattr(prompt, 'version', 'N/A')}"
+    )
     logger.debug(f"Prompt has versions attribute: {hasattr(prompt, 'versions')}")
     if hasattr(prompt, "versions"):
         logger.debug(f"Prompt versions count: {len(prompt.versions)}")
-    
+
     # Process version history if available
     versions = []
     if hasattr(prompt, "versions") and prompt.versions:
-        logger.info(f"Processing {len(prompt.versions)} versions for prompt {prompt_uuid}")
-        
+        logger.info(
+            f"Processing {len(prompt.versions)} versions for prompt {prompt_uuid}"
+        )
+
         # Debug log for each version
         for i, version in enumerate(prompt.versions):
-            logger.debug(f"Version {i+1}: id={version.id}, version={version.version}, " +
-                        f"parent_id={version.parent_id if hasattr(version, 'parent_id') else 'N/A'}, " +
-                        f"name={version.name}")
-            
-            versions.append({
-                "id": str(version.id),
-                "version": version.version,
-                "name": version.name,
-                "created_at": format_relative_time(version.created_at),
-                "created_by": version.creator.username if hasattr(version, "creator") and version.creator else "Unknown",
-                "updated_at": format_relative_time(version.updated_at) if version.updated_at else None,
-                "updated_by": version.updater.username if hasattr(version, "updater") and version.updater else None,
-                "is_active": version.is_active if hasattr(version, "is_active") else False
-            })
+            logger.debug(
+                f"Version {i+1}: id={version.id}, version={version.version}, "
+                + f"parent_id={version.parent_id if hasattr(version, 'parent_id') else 'N/A'}, "
+                + f"name={version.name}, is_active={getattr(version, 'is_active', None)}"
+            )
+
+            versions.append(
+                {
+                    "id": str(version.id),
+                    "version": version.version,
+                    "name": version.name,
+                    "created_at": format_relative_time(version.created_at),
+                    "created_by": (
+                        version.creator.username
+                        if hasattr(version, "creator") and version.creator
+                        else "Unknown"
+                    ),
+                    "updated_at": (
+                        format_relative_time(version.updated_at)
+                        if version.updated_at
+                        else None
+                    ),
+                    "updated_by": (
+                        version.updater.username
+                        if hasattr(version, "updater") and version.updater
+                        else None
+                    ),
+                    "is_active": (
+                        version.is_active if hasattr(version, "is_active") else False
+                    ),
+                }
+            )
         # Sort versions by version number (descending)
         versions.sort(key=lambda v: v["version"], reverse=True)
         logger.debug(f"Sorted {len(versions)} versions by version number")
-        
+
         # Additional debug info about version counting
-        logger.debug(f"prompt.versions count: {len(prompt.versions)}, processed versions count: {len(versions)}")
+        logger.debug(
+            f"prompt.versions count: {len(prompt.versions)}, processed versions count: {len(versions)}"
+        )
         logger.debug(f"Versions in array: {[v['version'] for v in versions]}")
     else:
         logger.info(f"No versions found for prompt {prompt_uuid}")
-    
+
     logger.info(f"Rendering prompt detail template with {len(versions)} versions")
     # Return the template response
+    # Log whether the prompt is active
+    is_active = getattr(prompt, "is_active", None)
+    logger.debug(
+        f"Current prompt is_active status: {is_active} (type: {type(is_active)})"
+    )
+
     return templates.TemplateResponse(
         "prompts/detail.html",
         {
@@ -663,14 +715,21 @@ async def project_prompt_detail(
                     if prompt.updated_at
                     else None
                 ),
-                "created_by": prompt.creator.username if hasattr(prompt, "creator") and prompt.creator else "Unknown",
-                "updated_by": prompt.updater.username if hasattr(prompt, "updater") and prompt.updater else "Unknown",
+                "created_by": (
+                    prompt.creator.username
+                    if hasattr(prompt, "creator") and prompt.creator
+                    else "Unknown"
+                ),
+                "updated_by": (
+                    prompt.updater.username
+                    if hasattr(prompt, "updater") and prompt.updater
+                    else "Unknown"
+                ),
                 "enabled": prompt.is_active if hasattr(prompt, "is_active") else True,
+                "is_active": prompt.is_active if hasattr(prompt, "is_active") else None,
                 "version": prompt.version if hasattr(prompt, "version") else 1,
                 "has_history": (
-                    len(prompt.versions) > 1
-                    if hasattr(prompt, "versions")
-                    else False
+                    len(prompt.versions) > 1 if hasattr(prompt, "versions") else False
                 ),
                 "variables": prompt.variables if hasattr(prompt, "variables") else [],
                 "last_used": (
@@ -705,14 +764,14 @@ async def update_prompt(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID format"
         )
-    
+
     try:
         prompt_uuid = uuid.UUID(prompt_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid prompt ID format"
         )
-    
+
     # Verify project ownership
     user_id = uuid.UUID(request.session["user_id"])
     project = project_manager.get_project(project_uuid)
@@ -720,30 +779,30 @@ async def update_prompt(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     if project.created_by != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this project",
         )
-    
+
     # Get the prompt
     prompt = prompt_manager.get_prompt(prompt_uuid)
     if not prompt:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
         )
-    
+
     # Verify that the prompt belongs to the project
     if prompt.project_id != project_uuid:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Prompt does not belong to this project",
         )
-    
+
     # Determine if this is a new version or an update to the current version
-    create_new_version = (version_action == "new_version")
-    
+    create_new_version = version_action == "new_version"
+
     # Update the prompt or create a new version
     updated_prompt, error = prompt_manager.update_prompt(
         prompt_id=prompt_uuid,
@@ -751,9 +810,9 @@ async def update_prompt(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         updated_by=user_id,
-        create_new_version=create_new_version
+        create_new_version=create_new_version,
     )
-    
+
     if error:
         # Return to the prompt detail page with an error message
         return templates.TemplateResponse(
@@ -787,16 +846,28 @@ async def update_prompt(
                         if prompt.updated_at
                         else None
                     ),
-                    "created_by": prompt.creator.username if hasattr(prompt, "creator") and prompt.creator else "Unknown",
-                    "updated_by": prompt.updater.username if hasattr(prompt, "updater") and prompt.updater else "Unknown",
-                    "enabled": prompt.is_active if hasattr(prompt, "is_active") else True,
+                    "created_by": (
+                        prompt.creator.username
+                        if hasattr(prompt, "creator") and prompt.creator
+                        else "Unknown"
+                    ),
+                    "updated_by": (
+                        prompt.updater.username
+                        if hasattr(prompt, "updater") and prompt.updater
+                        else "Unknown"
+                    ),
+                    "enabled": (
+                        prompt.is_active if hasattr(prompt, "is_active") else True
+                    ),
                     "version": prompt.version if hasattr(prompt, "version") else 1,
                     "has_history": (
                         len(prompt.versions) > 1
                         if hasattr(prompt, "versions")
                         else False
                     ),
-                    "variables": prompt.variables if hasattr(prompt, "variables") else [],
+                    "variables": (
+                        prompt.variables if hasattr(prompt, "variables") else []
+                    ),
                     "last_used": (
                         format_relative_time(prompt.last_used)
                         if hasattr(prompt, "last_used") and prompt.last_used
@@ -811,12 +882,12 @@ async def update_prompt(
                 },
             },
         )
-    
+
     # Get the ID to redirect to (might be a new prompt if a new version was created)
     redirect_prompt_id = updated_prompt.id if create_new_version else prompt_uuid
-    
+
     # Log activity (activity is already logged in the update_prompt method)
-    
+
     # Redirect back to the prompt detail page
     return RedirectResponse(
         url=f"/projects/{project_uuid}/prompts/{redirect_prompt_id}",
@@ -840,14 +911,14 @@ async def prompt_use_page(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID format"
         )
-    
+
     try:
         prompt_uuid = uuid.UUID(prompt_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid prompt ID format"
         )
-    
+
     # Verify project ownership
     user_id = uuid.UUID(request.session["user_id"])
     project = project_manager.get_project(project_uuid)
@@ -855,27 +926,27 @@ async def prompt_use_page(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     if project.created_by != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this project",
         )
-    
+
     # Get the prompt
     prompt = prompt_manager.get_prompt(prompt_uuid)
     if not prompt:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
         )
-    
+
     # Verify that the prompt belongs to the project
     if prompt.project_id != project_uuid:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Prompt does not belong to this project",
         )
-    
+
     # Extract variables from the prompt
     variables = []
     if hasattr(prompt, "variables") and prompt.variables:
@@ -883,11 +954,14 @@ async def prompt_use_page(
     else:
         # Try to extract variables from the user_prompt if not already defined
         import re
-        variable_pattern = r'\{\{([a-zA-Z0-9_]+)\}\}'
+
+        variable_pattern = r"\{\{([a-zA-Z0-9_]+)\}\}"
         user_prompt_variables = re.findall(variable_pattern, prompt.user_prompt)
-        system_prompt_variables = re.findall(variable_pattern, prompt.system_prompt or "")
+        system_prompt_variables = re.findall(
+            variable_pattern, prompt.system_prompt or ""
+        )
         variables = list(set(user_prompt_variables + system_prompt_variables))
-    
+
     # Return the template response
     return templates.TemplateResponse(
         "prompts/use.html",
@@ -911,7 +985,9 @@ async def prompt_use_page(
     )
 
 
-@router.post("/{project_id}/prompts/{prompt_id}/toggle-enabled", response_class=HTMLResponse)
+@router.post(
+    "/{project_id}/prompts/{prompt_id}/toggle-enabled", response_class=HTMLResponse
+)
 @require_auth()
 async def toggle_prompt_enabled(
     request: Request,
@@ -928,14 +1004,14 @@ async def toggle_prompt_enabled(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID format"
         )
-    
+
     try:
         prompt_uuid = uuid.UUID(prompt_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid prompt ID format"
         )
-    
+
     # Verify project ownership
     user_id = uuid.UUID(request.session["user_id"])
     project = project_manager.get_project(project_uuid)
@@ -943,48 +1019,47 @@ async def toggle_prompt_enabled(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     if project.created_by != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this project",
         )
-    
+
     # Get the prompt
     prompt = prompt_manager.get_prompt(prompt_uuid)
     if not prompt:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
         )
-    
+
     # Verify that the prompt belongs to the project
     if prompt.project_id != project_uuid:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Prompt does not belong to this project",
         )
-    
+
     # Toggle is_active status
     current_status = prompt.is_active if hasattr(prompt, "is_active") else True
     new_status = not current_status
-    
+
     # Update the prompt
     update_data = {
         "is_active": new_status,
         "updated_by": user_id,
     }
-    
+
     updated_prompt, error = prompt_manager.update_prompt(
-        prompt_id=prompt_uuid,
-        **update_data
+        prompt_id=prompt_uuid, **update_data
     )
-    
+
     if error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to toggle prompt status: {error}",
         )
-    
+
     # Log activity
     activity_manager.create_activity(
         user_id=user_id,
@@ -996,7 +1071,7 @@ async def toggle_prompt_enabled(
             "action": "enabled" if new_status else "disabled",
         },
     )
-    
+
     # Redirect back to the prompt detail page
     return RedirectResponse(
         url=f"/projects/{project_uuid}/prompts/{prompt_uuid}",
@@ -1016,8 +1091,10 @@ async def set_prompt_active(
     activity_manager: ActivityManager = Depends(get_activity_manager),
 ):
     """Set a prompt version as active"""
-    logger.info(f"Setting prompt as active: project_id={project_id}, prompt_id={prompt_id}, version={version}")
-    
+    logger.info(
+        f"Setting prompt as active: project_id={project_id}, prompt_id={prompt_id}, version={version}"
+    )
+
     try:
         project_uuid = uuid.UUID(project_id)
     except ValueError:
@@ -1025,7 +1102,7 @@ async def set_prompt_active(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID format"
         )
-    
+
     try:
         prompt_uuid = uuid.UUID(prompt_id)
     except ValueError:
@@ -1033,7 +1110,7 @@ async def set_prompt_active(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid prompt ID format"
         )
-    
+
     # Verify project ownership
     user_id = uuid.UUID(request.session["user_id"])
     project = project_manager.get_project(project_uuid)
@@ -1042,14 +1119,16 @@ async def set_prompt_active(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     if project.created_by != user_id:
-        logger.warning(f"Unauthorized attempt to modify project {project_uuid} by user {user_id}")
+        logger.warning(
+            f"Unauthorized attempt to modify project {project_uuid} by user {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this project",
         )
-    
+
     # Get the prompt
     prompt = prompt_manager.get_prompt(prompt_uuid)
     if not prompt:
@@ -1057,7 +1136,7 @@ async def set_prompt_active(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
         )
-    
+
     # Verify that the prompt belongs to the project
     if prompt.project_id != project_uuid:
         logger.error(f"Prompt {prompt_uuid} does not belong to project {project_uuid}")
@@ -1065,61 +1144,47 @@ async def set_prompt_active(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Prompt does not belong to this project",
         )
-    
-    # Find all related prompts (both parent and children)
-    related_prompts = []
-    
-    # If this is a child prompt (has parent_id), we need all siblings
-    if prompt.parent_id:
-        logger.debug(f"This is a child prompt with parent ID: {prompt.parent_id}")
-        # Get parent prompt
-        parent = prompt_manager.get_prompt(prompt.parent_id)
-        if parent:
-            related_prompts.append(parent)
-            # Get all siblings (prompts with same parent)
-            siblings = prompt_manager._db.query(prompt_manager.model_class)\
-                .filter(prompt_manager.model_class.parent_id == prompt.parent_id)\
-                .all()
-            related_prompts.extend(siblings)
-    else:
-        # This is a parent prompt, get all children
-        logger.debug(f"This is a parent prompt, getting all child versions")
-        related_prompts.append(prompt)  # Include the parent
-        children = prompt_manager._db.query(prompt_manager.model_class)\
-            .filter(prompt_manager.model_class.parent_id == prompt.id)\
-            .all()
-        related_prompts.extend(children)
-    
-    logger.debug(f"Found {len(related_prompts)} related prompts")
-    
+
+    # Get all versions related to this prompt (including parent, siblings, and children at any level)
+    all_related_prompts = prompt.versions if hasattr(prompt, "versions") else [prompt]
+    logger.debug(f"Found {len(all_related_prompts)} related prompts")
+
+    # Debug log all versions
+    for i, related in enumerate(all_related_prompts):
+        logger.debug(
+            f"Related prompt {i+1}: id={related.id}, version={related.version}, is_active={getattr(related, 'is_active', False)}"
+        )
+
     # First, deactivate all related prompts
-    for related in related_prompts:
-        if related.id != prompt.id and hasattr(related, "is_active") and related.is_active:
-            logger.debug(f"Deactivating prompt: {related.id}")
-            updated_related, error = prompt_manager.update_prompt(
-                prompt_id=related.id,
-                is_active=False,
-                updated_by=user_id
+    for related in all_related_prompts:
+        if (
+            related.id != prompt.id
+            and hasattr(related, "is_active")
+            and related.is_active
+        ):
+            logger.debug(
+                f"Deactivating prompt: {related.id} (version {related.version})"
             )
-            
+            updated_related, error = prompt_manager.update_prompt(
+                prompt_id=related.id, is_active=False, updated_by=user_id
+            )
+
             if error:
                 logger.error(f"Failed to deactivate prompt {related.id}: {error}")
-    
+
     # Set the current prompt as active
     logger.info(f"Setting prompt {prompt.id} (version {prompt.version}) as active")
     updated_prompt, error = prompt_manager.update_prompt(
-        prompt_id=prompt.id,
-        is_active=True,
-        updated_by=user_id
+        prompt_id=prompt.id, is_active=True, updated_by=user_id
     )
-    
+
     if error:
         logger.error(f"Failed to update prompt {prompt.id}: {error}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update prompt: {error}"
+            detail=f"Failed to update prompt: {error}",
         )
-    
+
     # Log activity
     activity_manager.create_activity(
         user_id=user_id,
@@ -1132,7 +1197,7 @@ async def set_prompt_active(
             "version": prompt.version if hasattr(prompt, "version") else None,
         },
     )
-    
+
     # Redirect back to the prompt detail page with a success message
     return RedirectResponse(
         url=f"/projects/{project_uuid}/prompts/{prompt_uuid}?message=Version+set+as+active+successfully",
