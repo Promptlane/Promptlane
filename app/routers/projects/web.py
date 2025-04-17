@@ -643,6 +643,8 @@ async def project_prompt_detail(
                     "id": str(version.id),
                     "version": version.version,
                     "name": version.name,
+                    "system_prompt": version.system_prompt,
+                    "user_prompt": version.user_prompt,
                     "created_at": format_relative_time(version.created_at),
                     "created_by": (
                         version.creator.username
