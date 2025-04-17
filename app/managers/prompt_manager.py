@@ -37,7 +37,8 @@ class PromptManager(BaseManager):
         key: str,
         name: str,
         description: str,
-        content: str,
+        system_prompt: str,
+        user_prompt: str,
         created_by: uuid.UUID
     ) -> Tuple[Optional[models.Prompt], str]:
         """Create a new prompt"""
@@ -54,7 +55,8 @@ class PromptManager(BaseManager):
                 'key': key,
                 'name': name,
                 'description': description,
-                'content': content,
+                'system_prompt': system_prompt,
+                'user_prompt': user_prompt,
                 'created_by': created_by,
                 'created_at': datetime.utcnow()
             })
