@@ -1,0 +1,24 @@
+/* Custom styles for version dropdown */
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+}
+/* Additional styles for diff2html integration */
+.d2h-wrapper {
+    margin-bottom: 20px;
+}
+.d2h-file-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 8px 10px;
+}
+.d2h-files-diff {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+} 

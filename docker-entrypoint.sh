@@ -88,12 +88,12 @@ if ! wait_for_postgres "$POSTGRES_HOST" "$POSTGRES_PORT" 60 5; then
     exit 1
 fi
 
-echo "PostgreSQL is reachable. Starting Alembic migrations..."
+echo "PostgreSQL is reachable. Starting database migrations..."
 
-# Use alembic directly for migrations
-echo "Running database migrations..."
-alembic upgrade head || {
-    echo "Error: Failed to run migrations"
+# Run comprehensive migration management
+echo "Checking for model changes and applying migrations..."
+python manage_migrations.py || {
+    echo "Warning: Migration management encountered issues."
     echo "This could be because the database doesn't exist yet or isn't properly configured."
     echo "The application will still start, but some features may not work correctly."
 }
