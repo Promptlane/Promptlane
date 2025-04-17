@@ -1,559 +1,295 @@
-/**
- * Prompt version comparison functionality
- * Handles the comparison between different versions of prompts
- */
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Compare script loaded');
+    console.log("DOM ready for diff2html integration");
     
-    // Listen for Bootstrap tab events
-    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tabEl => {
-        tabEl.addEventListener('shown.bs.tab', function (event) {
-            console.log('Tab activated:', event.target.getAttribute('data-bs-target'));
-            
-            // If compare tab is activated, initialize our code
-            if (event.target.getAttribute('data-bs-target') === '#compare-tab-pane') {
-                console.log('Compare tab activated, initializing compare functionality');
-                // Wait a brief moment for tab content to be fully rendered
-                setTimeout(initCompareFeature, 100);
-            }
-        });
-    });
-
-    // Try to handle direct navigation to the compare tab
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tab') === 'compare') {
-        console.log('URL indicates compare tab, activating tab');
-        const compareTab = document.getElementById('compare-tab');
-        if (compareTab) {
-            compareTab.click();
+    // Store versions data
+    let promptVersions;
+    try {
+        // Get the data from the JSON script tag instead of inline parsing
+        const versionsDataElement = document.getElementById('prompt-versions-data');
+        promptVersions = versionsDataElement ? JSON.parse(versionsDataElement.textContent) : [];
+        
+        console.log("Parsed versions:", promptVersions.length);
+        
+        // Log a sample version to check property names
+        if (promptVersions.length > 0) {
+            console.log("Sample version object:", promptVersions[0]);
         }
+        
+        // Make versions available globally for debugging
+        window.promptVersions = promptVersions;
+    } catch(e) {
+        console.error("Error parsing versions:", e);
+        promptVersions = [];
     }
     
-    // Initialize compare feature immediately as well
-    initCompareFeature();
+    // Create a map for easy access to version data
+    const versionMap = {};
+    promptVersions.forEach(version => {
+        versionMap[version.version] = {
+            id: version.id,
+            name: version.name,
+            // Use the actual property names from the data
+            systemPrompt: version.system_prompt,
+            userPrompt: version.user_prompt,
+            isActive: version.is_active,
+            createdAt: version.created_at,
+            updatedAt: version.updated_at || version.created_at,
+            createdBy: version.created_by,
+            updatedBy: version.updated_by || version.created_by
+        };
+    });
     
-    // Expose compareVersions function globally so it can be called from inline HTML
-    window.manualCompareVersions = function() {
-        try {
-            console.log('Manual compare versions called');
-            
-            // Get the necessary elements
-            const version1Select = document.getElementById('version1');
-            const version2Select = document.getElementById('version2');
-            const comparisonResult = document.getElementById('comparisonResult');
-            
-            if (!version1Select || !version2Select || !comparisonResult) {
-                console.error('Missing required elements for comparison');
-                return;
-            }
-            
-            // Show a loading indicator
-            comparisonResult.innerHTML = '<div class="alert alert-info text-center p-4"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Comparing versions...</div>';
-            comparisonResult.style.display = 'block';
-            
-            // Get the selected versions
-            const v1 = parseInt(version1Select.value);
-            const v2 = parseInt(version2Select.value);
+    // Elements
+    const version1Selector = document.getElementById('version1Selector');
+    const version2Selector = document.getElementById('version2Selector');
+    const compareButton = document.getElementById('compareButton');
+    const comparisonResults = document.getElementById('comparisonResults');
+    const loadingComparison = document.getElementById('loadingComparison');
+    const comparisonError = document.getElementById('comparisonError');
+    const sideBySideView = document.getElementById('sideBySideView');
+    const inlineView = document.getElementById('inlineView');
+    
+    // View type (side-by-side or inline)
+    let viewType = 'side-by-side';
+    
+    // Initialize the comparison UI
+    if (compareButton && version1Selector && version2Selector) {
+        compareButton.addEventListener('click', function() {
+            const v1 = parseInt(version1Selector.value);
+            const v2 = parseInt(version2Selector.value);
             
             if (v1 === v2) {
-                comparisonResult.innerHTML = '<div class="alert alert-warning text-center"><i class="bi bi-exclamation-triangle me-2"></i> Please select different versions to compare</div>';
+                showError("Please select different versions to compare");
                 return;
             }
             
-            // Check if we have versions data
-            if (!window.promptVersions || !Array.isArray(window.promptVersions) || window.promptVersions.length < 2) {
-                comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Need at least 2 versions to compare</div>';
-                return;
-            }
-            
-            // Check if diff library is loaded
-            if (!window.Diff) {
-                comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Diff library not loaded. Please refresh the page and try again.</div>';
-                return;
-            }
-            
-            // Execute the actual comparison
-            setTimeout(function() {
-                try {
-                    // Create a proper comparison UI with the versions
-                    executeComparison(v1, v2);
-                } catch (error) {
-                    console.error('Error executing comparison:', error);
-                    comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Error comparing versions: ' + error.message + '</div>';
-                }
-            }, 50);
-        } catch (error) {
-            console.error('Error in manual compare function:', error);
-            alert('Error comparing versions: ' + error.message);
-        }
-    };
+            compareVersions(v1, v2);
+        });
+    }
     
-    // Function to execute the actual comparison
-    function executeComparison(v1, v2) {
-        console.log('Executing comparison of versions', v1, v2);
-        
-        // Map of version data for easy lookup
-        let versionData = {};
-        window.promptVersions.forEach(version => {
-            versionData[version.version] = {
-                systemPrompt: version.system_prompt,
-                userPrompt: version.user_prompt,
-                isActive: version.is_active
-            };
+    // View toggle handlers
+    if (sideBySideView && inlineView) {
+        sideBySideView.addEventListener('click', function() {
+            viewType = 'side-by-side';
+            sideBySideView.classList.add('active');
+            inlineView.classList.remove('active');
+            // Re-run comparison with current versions
+            const v1 = parseInt(version1Selector.value);
+            const v2 = parseInt(version2Selector.value);
+            compareVersions(v1, v2);
         });
         
-        // Get comparison result container
-        const comparisonResult = document.getElementById('comparisonResult');
-        
-        // Reset the comparison result UI
-        comparisonResult.innerHTML = `
-        <div class="comparison-container">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span id="version1Title">Version <span id="v1Num"></span></span>
-                            <span id="version1Badge" class="badge bg-success">Active</span>
-                        </div>
-                        <div class="card-body">
-                            <h6 class="mb-2">System Prompt</h6>
-                            <div id="version1System" class="prompt-section mb-4"></div>
-                            
-                            <h6 class="mb-2">User Prompt</h6>
-                            <div id="version1User" class="prompt-section"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span id="version2Title">Version <span id="v2Num"></span></span>
-                            <span id="version2Badge" class="badge bg-secondary d-none">Active</span>
-                        </div>
-                        <div class="card-body">
-                            <h6 class="mb-2">System Prompt</h6>
-                            <div id="version2System" class="prompt-section highlight-changes mb-4"></div>
-                            
-                            <h6 class="mb-2">User Prompt</h6>
-                            <div id="version2User" class="prompt-section highlight-changes"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mt-3 text-center">
-            <a href="#" id="setActiveBtn" class="btn btn-sm btn-outline-primary">Set Version <span id="setActiveVersion"></span> as Active</a>
-        </div>`;
-        
-        // Set version numbers in UI
-        document.getElementById('v1Num').textContent = v1;
-        document.getElementById('v2Num').textContent = v2;
-        
-        // Get version data
-        const v1Data = versionData[v1] || { systemPrompt: '', userPrompt: '' };
-        const v2Data = versionData[v2] || { systemPrompt: '', userPrompt: '' };
-        
-        // Display version 1 data (left side)
-        document.getElementById('version1System').textContent = v1Data.systemPrompt;
-        document.getElementById('version1User').textContent = v1Data.userPrompt;
-        
-        // Update active badge visibility
-        document.getElementById('version1Badge').classList.toggle('d-none', !v1Data.isActive);
-        document.getElementById('version2Badge').classList.toggle('d-none', !v2Data.isActive);
-        
-        // Create diffs
-        if (typeof Diff.diffWords === 'function') {
-            // Using jsdiff library
-            // Create diffs for system prompt
-            const systemDiff = Diff.diffWords(v1Data.systemPrompt, v2Data.systemPrompt);
-            let systemHtml = '';
-            systemDiff.forEach(part => {
-                if (part.added) {
-                    systemHtml += `<ins>${part.value}</ins>`;
-                } else if (part.removed) {
-                    systemHtml += `<del>${part.value}</del>`;
-                } else {
-                    systemHtml += part.value;
-                }
-            });
-            
-            // Create diffs for user prompt
-            const userDiff = Diff.diffWords(v1Data.userPrompt, v2Data.userPrompt);
-            let userHtml = '';
-            userDiff.forEach(part => {
-                if (part.added) {
-                    userHtml += `<ins>${part.value}</ins>`;
-                } else if (part.removed) {
-                    userHtml += `<del>${part.value}</del>`;
-                } else {
-                    userHtml += part.value;
-                }
-            });
-            
-            // Set diff display for version 2 (right side)
-            document.getElementById('version2System').innerHTML = systemHtml;
-            document.getElementById('version2User').innerHTML = userHtml;
-        } else {
-            // Fallback to direct text
-            document.getElementById('version2System').textContent = v2Data.systemPrompt;
-            document.getElementById('version2User').textContent = v2Data.userPrompt;
-        }
-        
-        // Set up active version button
-        const setActiveBtn = document.getElementById('setActiveBtn');
-        const setActiveVersion = document.getElementById('setActiveVersion');
-        
-        if (!v2Data.isActive && setActiveVersion && setActiveBtn) {
-            setActiveVersion.textContent = v2;
-            setActiveBtn.href = window.setActiveVersionUrl.replace('VERSION_NUMBER', v2);
-            setActiveBtn.classList.remove('d-none');
-        } else if (setActiveBtn) {
-            setActiveBtn.classList.add('d-none');
-        }
-        
-        console.log('Version comparison completed successfully');
+        inlineView.addEventListener('click', function() {
+            viewType = 'line-by-line';
+            inlineView.classList.add('active');
+            sideBySideView.classList.remove('active');
+            // Re-run comparison with current versions
+            const v1 = parseInt(version1Selector.value);
+            const v2 = parseInt(version2Selector.value);
+            compareVersions(v1, v2);
+        });
     }
     
-    // Use a self-executing function to isolate our code from potential external interference
-    function initCompareFeature() {
+    // Compare versions function
+    function compareVersions(v1, v2) {
+        if (!comparisonResults || !loadingComparison) return;
+        
+        // Show loading, hide results
+        comparisonResults.classList.add('d-none');
+        loadingComparison.classList.remove('d-none');
+        comparisonError.classList.add('d-none');
+        
         try {
-            console.log('initCompareFeature called');
-            // Version comparison elements
-            const compareBtn = document.getElementById('compareBtn');
-            const version1Select = document.getElementById('version1');
-            const version2Select = document.getElementById('version2');
-            const swapVersionsBtn = document.getElementById('swapVersionsBtn');
-            const comparisonResult = document.getElementById('comparisonResult');
-            const setActiveBtn = document.getElementById('setActiveBtn');
+            const v1Data = versionMap[v1];
+            const v2Data = versionMap[v2];
             
-            console.log('Compare button found:', !!compareBtn);
-            console.log('Version selects found:', !!version1Select, !!version2Select);
-            console.log('Swap button found:', !!swapVersionsBtn);
-            console.log('Comparison result div found:', !!comparisonResult);
-            
-            // Ensure we have all the necessary elements
-            if (!compareBtn || !version1Select || !version2Select || !comparisonResult) {
-                console.error('Missing required elements for comparison functionality');
+            if (!v1Data || !v2Data) {
+                showError("Could not find version data");
                 return;
             }
             
-            // Initialize comparison data from the versions passed from the template
-            let versionData = {};
+            // Debug the data
+            console.log("Version 1 data:", v1Data);
+            console.log("Version 2 data:", v2Data);
             
-            // Create a map of version data for easy lookup
-            if (window.promptVersions && Array.isArray(window.promptVersions)) {
-                console.log('Found prompt versions:', window.promptVersions.length);
-                
-                if (window.promptVersions.length < 2) {
-                    console.warn('Need at least 2 versions to compare, but only found', window.promptVersions.length);
-                    if (compareBtn) {
-                        compareBtn.disabled = true;
-                        compareBtn.title = "Need at least 2 versions to compare";
-                    }
+            // Safely access the fields with fallbacks
+            const systemPrompt1 = v1Data.systemPrompt || "";
+            const systemPrompt2 = v2Data.systemPrompt || "";
+            const userPrompt1 = v1Data.userPrompt || "";
+            const userPrompt2 = v2Data.userPrompt || "";
+            
+            // Debug the actual values we're working with
+            console.log("System prompt 1:", typeof systemPrompt1, systemPrompt1.length);
+            console.log("System prompt 2:", typeof systemPrompt2, systemPrompt2.length);
+            console.log("User prompt 1:", typeof userPrompt1, userPrompt1.length);
+            console.log("User prompt 2:", typeof userPrompt2, userPrompt2.length);
+            
+            // Create diff2html configurations
+            const diffConfig = {
+                drawFileList: false,
+                matching: 'lines',
+                outputFormat: viewType,
+                renderNothingWhenEmpty: true,
+                matchWordsThreshold: 0.25,
+                matchingMaxComparisons: 3000,
+                // Custom templates to hide the RENAMED label
+                rawTemplates: {
+                    'tag-file-renamed': '',
+                    'generic-file-path-renamed': '<span class="d2h-file-name">{% raw %}{{{fileName}}}{% endraw %}</span>'
                 }
-                
-                window.promptVersions.forEach(version => {
-                    versionData[version.version] = {
-                        systemPrompt: version.system_prompt,
-                        userPrompt: version.user_prompt,
-                        isActive: version.is_active
-                    };
-                });
-            } else {
-                console.error('window.promptVersions is not available or not an array:', window.promptVersions);
-            }
+            };
             
-            // Setup event listeners
-            if (compareBtn) {
-                console.log("Adding click handler to compare button in main script");
-                
-                // Try multiple approaches to ensure the click handler works
-                // 1. Standard event listener
-                compareBtn.addEventListener('click', handleCompareClick);
-                
-                // 2. Direct onclick property as backup
-                compareBtn.onclick = function(e) {
-                    console.log("Compare button clicked via onclick property");
-                    handleCompareClick(e);
-                    return false;
-                };
-                
-                // 3. jQuery-style event binding if jQuery is available
-                if (window.jQuery) {
-                    console.log("jQuery detected, adding jQuery event handler");
-                    jQuery(compareBtn).on('click', handleCompareClick);
-                }
-            }
+            // Generate diffs and render them with diff2html
             
-            if (swapVersionsBtn) {
-                swapVersionsBtn.addEventListener('click', function(e) {
-                    console.log('Swap button clicked');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const temp = version1Select.value;
-                    version1Select.value = version2Select.value;
-                    version2Select.value = temp;
-                    
-                    // Add a small delay to ensure we're not competing with other scripts
-                    setTimeout(function() {
-                        compareVersions();
-                    }, 50);
-                    
-                    return false;
-                });
-            }
+            // // Name diff
+            // const nameDiffInput = createDiffInput(
+            //     `Version ${v1} Name.txt`,
+            //     `Version ${v2} Name.txt`,
+            //     v1Data.name || "",
+            //     v2Data.name || ""
+            // );
+            // document.getElementById('nameCompare').innerHTML = 
+            //     Diff2Html.html(nameDiffInput, diffConfig);
             
-            // Compare the selected versions
-            function compareVersions() {
-                console.log('compareVersions called');
-                
-                try {
-                    // Show a loading indicator
-                    if (comparisonResult) {
-                        comparisonResult.innerHTML = '<div class="alert alert-info text-center p-4"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Comparing versions...</div>';
-                        comparisonResult.style.display = 'block';
-                    }
-                    
-                    const v1 = parseInt(version1Select.value);
-                    const v2 = parseInt(version2Select.value);
-                    
-                    console.log('Comparing versions:', v1, v2);
-                    
-                    if (v1 === v2) {
-                        comparisonResult.innerHTML = '<div class="alert alert-warning text-center"><i class="bi bi-exclamation-triangle me-2"></i> Please select different versions to compare</div>';
-                        return;
-                    }
-                    
-                    if (!window.promptVersions || !Array.isArray(window.promptVersions) || window.promptVersions.length < 2) {
-                        comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Need at least 2 versions to compare</div>';
-                        return;
-                    }
-                    
-                    if (!Diff) {
-                        comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Diff library not loaded. Please refresh the page and try again.</div>';
-                        return;
-                    }
-                    
-                    // Reset comparison result to original HTML structure from the template
-                    resetComparisonResult();
-                    
-                    // Show the comparison result container
-                    comparisonResult.style.display = 'block';
-                    
-                    // Set version numbers in UI
-                    const v1NumEl = document.getElementById('v1Num');
-                    const v2NumEl = document.getElementById('v2Num');
-                    console.log('Version number elements found:', !!v1NumEl, !!v2NumEl);
-                    
-                    if (v1NumEl) v1NumEl.textContent = v1;
-                    if (v2NumEl) v2NumEl.textContent = v2;
-                    
-                    // Set version texts
-                    const v1Data = versionData[v1] || { systemPrompt: '', userPrompt: '' };
-                    const v2Data = versionData[v2] || { systemPrompt: '', userPrompt: '' };
-                    console.log('Version data found:', !!v1Data, !!v2Data);
-                    
-                    // Display version 1 data (left side)
-                    const version1System = document.getElementById('version1System');
-                    const version1User = document.getElementById('version1User');
-                    console.log('Version 1 elements found:', !!version1System, !!version1User);
-                    
-                    if (version1System) version1System.textContent = v1Data.systemPrompt;
-                    if (version1User) version1User.textContent = v1Data.userPrompt;
-                    
-                    // Update active badge visibility
-                    const version1Badge = document.getElementById('version1Badge');
-                    const version2Badge = document.getElementById('version2Badge');
-                    console.log('Badge elements found:', !!version1Badge, !!version2Badge);
-                    
-                    if (version1Badge) version1Badge.classList.toggle('d-none', !v1Data.isActive);
-                    if (version2Badge) version2Badge.classList.toggle('d-none', !v2Data.isActive);
-                    
-                    // Create diffs for system prompt
-                    console.log('Creating diffs using Diff:', !!Diff);
-                    
-                    try {
-                        // Check which Diff API we have available
-                        if (typeof Diff.diffWords === 'function') {
-                            console.log('Using Diff.diffWords API');
-                            createDiffWithJsDiff(v1Data, v2Data);
-                        } else if (typeof Diff.diffChars === 'function') {
-                            console.log('Using Diff.diffChars API');
-                            createDiffWithDiffJs(v1Data, v2Data);
-                        } else {
-                            console.error('No compatible Diff API found. Available methods:', Object.keys(Diff));
-                            // Show error
-                            comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Diff library API not compatible. Please contact support.</div>';
-                            return;
-                        }
-                        
-                        // Set up active version button
-                        const setActiveVersion = document.getElementById('setActiveVersion');
-                        console.log('Set active elements found:', !!setActiveVersion, !!setActiveBtn);
-                        
-                        if (!v2Data.isActive && setActiveVersion && setActiveBtn) {
-                            setActiveVersion.textContent = v2;
-                            setActiveBtn.href = window.setActiveVersionUrl.replace('VERSION_NUMBER', v2);
-                            setActiveBtn.classList.remove('d-none');
-                        } else if (setActiveBtn) {
-                            setActiveBtn.classList.add('d-none');
-                        }
-                        
-                        console.log('Version comparison completed successfully');
-                    } catch (diffError) {
-                        console.error('Error during diff calculation:', diffError);
-                        comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Error creating diff: ' + diffError.message + '</div>';
-                    }
-                } catch (error) {
-                    console.error('Error in compareVersions function:', error);
-                    if (comparisonResult) {
-                        comparisonResult.innerHTML = '<div class="alert alert-danger text-center"><i class="bi bi-exclamation-triangle me-2"></i> Error comparing versions: ' + error.message + '</div>';
-                        comparisonResult.style.display = 'block';
-                    }
-                }
-            }
+            // System prompt diff
+            const systemPromptDiffInput = createDiffInput(
+                `Version ${v1} System Prompt`,
+                `Version ${v2} System Prompt`,
+                systemPrompt1,
+                systemPrompt2
+            );
+            console.log("System prompt diff input:", systemPromptDiffInput);
+            document.getElementById('systemPromptCompare').innerHTML = 
+                Diff2Html.html(systemPromptDiffInput, diffConfig);
             
-            function handleCompareClick(e) {
-                console.log('Compare button clicked - handler triggered');
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                
-                // Add a small delay to ensure we're not competing with other scripts
-                setTimeout(function() {
-                    compareVersions();
-                }, 50);
-                
-                return false;
-            }
+            // User prompt diff
+            const userPromptDiffInput = createDiffInput(
+                `Version ${v1} User Prompt`,
+                `Version ${v2} User Prompt`,
+                userPrompt1,
+                userPrompt2
+            );
+            console.log("User prompt diff input:", userPromptDiffInput);
+            document.getElementById('userPromptCompare').innerHTML = 
+                Diff2Html.html(userPromptDiffInput, diffConfig);
             
-            // Function to reset comparison result to original structure
-            function resetComparisonResult() {
-                // We need to preserve the original HTML structure
-                const originalHTML = `
-                <div class="comparison-container">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span id="version1Title">Version <span id="v1Num"></span></span>
-                                    <span id="version1Badge" class="badge bg-success">Active</span>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="mb-2">System Prompt</h6>
-                                    <div id="version1System" class="prompt-section mb-4"></div>
-                                    
-                                    <h6 class="mb-2">User Prompt</h6>
-                                    <div id="version1User" class="prompt-section"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span id="version2Title">Version <span id="v2Num"></span></span>
-                                    <span id="version2Badge" class="badge bg-secondary d-none">Active</span>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="mb-2">System Prompt</h6>
-                                    <div id="version2System" class="prompt-section highlight-changes mb-4"></div>
-                                    
-                                    <h6 class="mb-2">User Prompt</h6>
-                                    <div id="version2User" class="prompt-section highlight-changes"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-3 text-center">
-                    <a href="#" id="setActiveBtn" class="btn btn-sm btn-outline-primary">Set Version <span id="setActiveVersion"></span> as Active</a>
-                </div>`;
-                
-                if (comparisonResult) {
-                    comparisonResult.innerHTML = originalHTML;
-                }
-            }
+            // Show results, hide loading
+            comparisonResults.classList.remove('d-none');
+            loadingComparison.classList.add('d-none');
             
-            // For jsdiff library (4.x)
-            function createDiffWithJsDiff(v1Data, v2Data) {
-                // Create diffs for system prompt
-                const systemDiff = Diff.diffWords(v1Data.systemPrompt, v2Data.systemPrompt);
-                let systemHtml = '';
-                systemDiff.forEach(part => {
-                    if (part.added) {
-                        systemHtml += `<ins>${part.value}</ins>`;
-                    } else if (part.removed) {
-                        systemHtml += `<del>${part.value}</del>`;
-                    } else {
-                        systemHtml += part.value;
-                    }
-                });
-                
-                // Create diffs for user prompt
-                const userDiff = Diff.diffWords(v1Data.userPrompt, v2Data.userPrompt);
-                let userHtml = '';
-                userDiff.forEach(part => {
-                    if (part.added) {
-                        userHtml += `<ins>${part.value}</ins>`;
-                    } else if (part.removed) {
-                        userHtml += `<del>${part.value}</del>`;
-                    } else {
-                        userHtml += part.value;
-                    }
-                });
-                
-                // Set diff display for version 2 (right side)
-                const version2System = document.getElementById('version2System');
-                const version2User = document.getElementById('version2User');
-                
-                if (version2System) version2System.innerHTML = systemHtml;
-                if (version2User) version2User.innerHTML = userHtml;
-            }
-            
-            // For diff library (5.x)
-            function createDiffWithDiffJs(v1Data, v2Data) {
-                // Create diffs for system prompt
-                const systemDiff = Diff.diffChars(v1Data.systemPrompt, v2Data.systemPrompt);
-                let systemHtml = '';
-                systemDiff.forEach(part => {
-                    if (part.added) {
-                        systemHtml += `<ins>${part.value}</ins>`;
-                    } else if (part.removed) {
-                        systemHtml += `<del>${part.value}</del>`;
-                    } else {
-                        systemHtml += part.value;
-                    }
-                });
-                
-                // Create diffs for user prompt
-                const userDiff = Diff.diffChars(v1Data.userPrompt, v2Data.userPrompt);
-                let userHtml = '';
-                userDiff.forEach(part => {
-                    if (part.added) {
-                        userHtml += `<ins>${part.value}</ins>`;
-                    } else if (part.removed) {
-                        userHtml += `<del>${part.value}</del>`;
-                    } else {
-                        userHtml += part.value;
-                    }
-                });
-                
-                // Set diff display for version 2 (right side)
-                const version2System = document.getElementById('version2System');
-                const version2User = document.getElementById('version2User');
-                
-                if (version2System) version2System.innerHTML = systemHtml;
-                if (version2User) version2User.innerHTML = userHtml;
-            }
         } catch (error) {
-            console.error('Error initializing compare functionality:', error);
+            console.error("Error comparing versions:", error);
+            showError("Error comparing versions: " + error.message);
         }
     }
-}); 
+    
+    // Helper function to create a unified diff input for diff2html
+    function createDiffInput(oldFileName, newFileName, oldText, newText) {
+        // Ensure we have string values and normalize line endings
+        oldText = String(oldText || "").replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        newText = String(newText || "").replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        
+        // Check if one is empty and one has content (added or removed entirely)
+        const isAddition = oldText.trim() === "" && newText.trim() !== "";
+        const isDeletion = oldText.trim() !== "" && newText.trim() === "";
+        
+        // Split into lines and ensure we have at least one line
+        // If text is empty, make it a single empty line for proper diff formatting
+        const oldLines = oldText.trim() === "" ? [""] : oldText.split('\n');
+        const newLines = newText.trim() === "" ? [""] : newText.split('\n');
+        
+        // Debug line counts 
+        console.log(`${oldFileName} lines: ${oldLines.length}, ${newFileName} lines: ${newLines.length}`);
+        console.log(`Is addition: ${isAddition}, Is deletion: ${isDeletion}`);
+        
+        // Create a unified diff header with correct line counts
+        // Ensure we use at least 1 for the line count
+        // Use identical paths in the diff-git line to avoid RENAMED tag
+        const commonName = oldFileName.replace(/ \(v[0-9]+\)$/, '');
+        const header = [
+            'diff --git a/' + oldFileName + ' b/' + newFileName,
+            '--- a/' + oldFileName,
+            '+++ b/' + newFileName,
+            '@@ -1,' + Math.max(1, oldLines.length) + ' +1,' + Math.max(1, newLines.length) + ' @@'
+        ].join('\n');
+        
+        // Build the diff body with proper formatting
+        let diffBody = '';
+        
+        // If texts are identical, show them as context
+        if (oldText === newText && oldText.length > 0) {
+            for (const line of oldLines) {
+                diffBody += ' ' + line + '\n';
+            }
+        }
+        // If this is a pure addition (nothing to empty)
+        else if (isAddition) {
+            diffBody += '-\n';  // Show an empty line being removed
+            for (const line of newLines) {
+                diffBody += '+' + line + '\n';
+            }
+        }
+        // If this is a pure deletion (empty to nothing)
+        else if (isDeletion) {
+            for (const line of oldLines) {
+                diffBody += '-' + line + '\n';
+            }
+            diffBody += '+\n';  // Show an empty line being added
+        }
+        // Otherwise show the normal differences
+        else {
+            for (const line of oldLines) {
+                diffBody += '-' + line + '\n';
+            }
+            for (const line of newLines) {
+                diffBody += '+' + line + '\n';
+            }
+        }
+        
+        // Debug the diff output
+        if (diffBody.length < 500) {
+            console.log("Generated diff:", diffBody);
+        } else {
+            console.log("Generated diff (truncated):", diffBody.substring(0, 200) + "...");
+        }
+        
+        // Return the complete unified diff format
+        return header + '\n' + diffBody;
+    }
+    
+    // Helper to show error messages
+    function showError(message) {
+        if (!comparisonError) return;
+        
+        const errorMessageElement = document.getElementById('errorMessage');
+        if (errorMessageElement) {
+            errorMessageElement.textContent = message;
+        }
+        
+        comparisonResults.classList.add('d-none');
+        loadingComparison.classList.add('d-none');
+        comparisonError.classList.remove('d-none');
+    }
+    
+    // Check if we should compare on load (if compare tab is active)
+    if (window.location.hash === '#compare-tab-pane' || 
+        new URLSearchParams(window.location.search).get('tab') === 'compare') {
+        // Activate the compare tab
+        const compareTab = document.getElementById('compare-tab');
+        if (compareTab) {
+            const bsTab = new bootstrap.Tab(compareTab);
+            bsTab.show();
+            
+            // Short delay to ensure tab is shown before triggering comparison
+            setTimeout(function() {
+                if (version1Selector && version2Selector) {
+                    const v1 = parseInt(version1Selector.value);
+                    const v2 = parseInt(version2Selector.value);
+                    if (v1 !== v2) {
+                        compareVersions(v1, v2);
+                    }
+                }
+            }, 200);
+        }
+    }
+});

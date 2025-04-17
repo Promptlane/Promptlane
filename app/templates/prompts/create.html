@@ -17,8 +17,8 @@
 
 {% block content %}
 <div class="page-header d-flex align-items-center mb-3">
-    <a href="/projects/{{ project.id }}/prompts" class="btn btn-sm btn-outline-secondary me-3">
-        <i class="bi bi-arrow-left"></i> Back to Prompts
+    <a href="/projects/{{ project.id }}" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back to Project
     </a>
     <h1 class="mb-0">Create New Prompt</h1>
 </div>
@@ -52,7 +52,7 @@
                 </div>
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <a href="/projects/{{ project.id }}/prompts" class="btn btn-outline-secondary">
+                    <a href="/projects/{{ project.id }}" class="btn btn-outline-secondary">
                         Cancel
                     </a>
                     <button type="submit" class="btn btn-primary">
