@@ -152,9 +152,12 @@
                 </div>
                 <div class="alert alert-info">
                     {% set total_versions = prompt.versions|length %}
-                    <i class="bi bi-info-circle me-2"></i> You're viewing version {{ prompt.version }} of this prompt. This prompt has {{ total_versions }} versions in total.
-                    {% if not prompt.is_active %}
+                    <!-- Debug is_active status: {{ prompt.is_active }} (type: {{ prompt.is_active.__class__.__name__ if prompt.is_active is defined else 'undefined' }}) -->
+                    <i class="bi bi-info-circle me-2"></i> You're viewing version {{ prompt.version }} of this prompt. This prompt has {{ total_versions }} total versions in its history.
+                    {% if prompt.is_active is defined and prompt.is_active == False %}
                     <strong>Note:</strong> This is not the active version. <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/set-active">Set as active</a>
+                    {% elif prompt.is_active is not defined %}
+                    <!-- No is_active attribute defined -->
                     {% endif %}
                 </div>
             </div>

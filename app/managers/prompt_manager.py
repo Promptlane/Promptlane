@@ -37,45 +37,53 @@ class PromptManager(BaseManager):
             logger.debug(f"Found prompt: id={prompt.id}, name={prompt.name}, " + 
                        f"parent_id={prompt.parent_id}, version={getattr(prompt, 'version', 'N/A')}")
             
-            # Find the root parent and all related versions
+            # Find the original root parent by traversing up
+            current = prompt
+            root_parent = current
+            
+            # Traverse up the parent chain to find the root (v1)
+            while current.parent_id is not None:
+                logger.debug(f"Traversing up from version {current.version} to parent")
+                parent = self._db.query(self.model_class)\
+                    .filter(self.model_class.id == current.parent_id)\
+                    .first()
+                
+                if not parent:
+                    logger.warning(f"Parent not found for prompt {current.id}")
+                    break
+                
+                root_parent = parent
+                current = parent
+                logger.debug(f"Found parent: id={parent.id}, version={parent.version}")
+            
+            logger.info(f"Found root parent: id={root_parent.id}, version={root_parent.version}")
+            
+            # Get ALL descendants at all levels using recursive CTE (Common Table Expression)
+            # This is the most efficient way to get the entire hierarchy
             versions = []
             version_ids = set()
-            root_parent = None
-            
-            # If this is a child prompt, find its parent
-            if prompt.parent_id:
-                logger.debug(f"This is a child prompt with parent_id: {prompt.parent_id}")
-                root_parent = self._db.query(self.model_class)\
-                    .filter(self.model_class.id == prompt.parent_id)\
-                    .first()
-            else:
-                # This is already a parent prompt
-                logger.debug(f"This is a parent prompt (version 1)")
-                root_parent = prompt
-            
-            if not root_parent:
-                logger.warning(f"Root parent not found for prompt {prompt_id}")
-                # Return just the prompt if we can't find a parent
-                prompt.versions = [prompt]
-                return prompt
-            
-            # Get all child versions of the root parent
-            logger.debug(f"Getting all children of root parent: {root_parent.id}")
-            children = self._db.query(self.model_class)\
-                .filter(self.model_class.parent_id == root_parent.id)\
-                .all()
             
             # First add the root parent (version 1)
             versions.append(root_parent)
             version_ids.add(root_parent.id)
-            logger.debug(f"Added root parent to versions list: id={root_parent.id}, version={root_parent.version}")
             
-            # Then add all children
-            for child in children:
-                if child.id not in version_ids:
-                    versions.append(child)
-                    version_ids.add(child.id)
-                    logger.debug(f"Added child to versions list: id={child.id}, version={child.version}")
+            # Function to recursively collect all descendants
+            def collect_descendants(parent_id, indent=1):
+                children = self._db.query(self.model_class)\
+                    .filter(self.model_class.parent_id == parent_id)\
+                    .all()
+                
+                for child in children:
+                    if child.id not in version_ids:
+                        versions.append(child)
+                        version_ids.add(child.id)
+                        logger.debug(f"{'  ' * indent}Added child: id={child.id}, version={child.version}")
+                        # Recursively get this child's children
+                        collect_descendants(child.id, indent + 1)
+            
+            # Start collecting from the root
+            logger.debug(f"Starting to collect all descendants from root parent: {root_parent.id}")
+            collect_descendants(root_parent.id)
             
             # Log the full version list
             version_info = [{"id": str(v.id), "version": v.version} for v in versions]
