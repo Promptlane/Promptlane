@@ -584,7 +584,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 outputFormat: viewType,
                 renderNothingWhenEmpty: true,
                 matchWordsThreshold: 0.25,
-                matchingMaxComparisons: 3000
+                matchingMaxComparisons: 3000,
+                // Custom templates to hide the RENAMED label
+                rawTemplates: {
+                    'tag-file-renamed': '',
+                    'generic-file-path-renamed': '<span class="d2h-file-name">{% raw %}{{{fileName}}}{% endraw %}</span>'
+                }
             };
             
             // Generate diffs and render them with diff2html
