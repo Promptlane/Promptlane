@@ -10,6 +10,7 @@ from app.exceptions import PromptCreationError, PromptNotFoundError, PromptUpdat
 from app.db.database import get_db
 from app.managers.base_manager import BaseManager
 import logging
+from sqlalchemy.orm import joinedload
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,75 @@ class PromptManager(BaseManager):
         super().__init__(models.Prompt, db_session)
 
     def get_prompt(self, prompt_id: uuid.UUID) -> Optional[models.Prompt]:
-        """Get a prompt by ID"""
-        return self.get(prompt_id)
+        """Get a prompt by ID with its versions"""
+        try:
+            logger.info(f"Getting prompt with ID: {prompt_id}")
+            
+            # First, get the prompt by ID
+            prompt = self._db.query(self.model_class)\
+                .filter(self.model_class.id == prompt_id)\
+                .first()
+                
+            if not prompt:
+                logger.warning(f"Prompt not found: {prompt_id}")
+                return None
+                
+            logger.debug(f"Found prompt: id={prompt.id}, name={prompt.name}, " + 
+                       f"parent_id={prompt.parent_id}, version={getattr(prompt, 'version', 'N/A')}")
+            
+            # Find the root parent and all related versions
+            versions = []
+            version_ids = set()
+            root_parent = None
+            
+            # If this is a child prompt, find its parent
+            if prompt.parent_id:
+                logger.debug(f"This is a child prompt with parent_id: {prompt.parent_id}")
+                root_parent = self._db.query(self.model_class)\
+                    .filter(self.model_class.id == prompt.parent_id)\
+                    .first()
+            else:
+                # This is already a parent prompt
+                logger.debug(f"This is a parent prompt (version 1)")
+                root_parent = prompt
+            
+            if not root_parent:
+                logger.warning(f"Root parent not found for prompt {prompt_id}")
+                # Return just the prompt if we can't find a parent
+                prompt.versions = [prompt]
+                return prompt
+            
+            # Get all child versions of the root parent
+            logger.debug(f"Getting all children of root parent: {root_parent.id}")
+            children = self._db.query(self.model_class)\
+                .filter(self.model_class.parent_id == root_parent.id)\
+                .all()
+            
+            # First add the root parent (version 1)
+            versions.append(root_parent)
+            version_ids.add(root_parent.id)
+            logger.debug(f"Added root parent to versions list: id={root_parent.id}, version={root_parent.version}")
+            
+            # Then add all children
+            for child in children:
+                if child.id not in version_ids:
+                    versions.append(child)
+                    version_ids.add(child.id)
+                    logger.debug(f"Added child to versions list: id={child.id}, version={child.version}")
+            
+            # Log the full version list
+            version_info = [{"id": str(v.id), "version": v.version} for v in versions]
+            logger.info(f"Complete versions list: {version_info}")
+            
+            # Attach the versions list to the prompt
+            prompt.versions = versions
+            
+            logger.info(f"Returning prompt with {len(versions)} total versions")
+            return prompt
+                
+        except Exception as e:
+            logger.error(f"Error getting prompt with versions: {str(e)}")
+            return None
 
     def get_prompt_by_key(self, key: str) -> Optional[models.Prompt]:
         """Get a prompt by key"""
@@ -83,40 +151,117 @@ class PromptManager(BaseManager):
         name: Optional[str] = None,
         description: Optional[str] = None,
         content: Optional[str] = None,
-        updated_by: Optional[uuid.UUID] = None
+        system_prompt: Optional[str] = None,
+        user_prompt: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        updated_by: Optional[uuid.UUID] = None,
+        create_new_version: bool = False
     ) -> Tuple[Optional[models.Prompt], str]:
-        """Update a prompt"""
+        """Update a prompt or create a new version"""
         try:
+            logger.info(f"Updating prompt {prompt_id} (create_new_version={create_new_version})")
+            logger.debug(f"Update params - name: {name}, system_prompt: {system_prompt and len(system_prompt)}, " +
+                        f"user_prompt: {user_prompt and len(user_prompt)}, updated_by: {updated_by}")
+            
             prompt = self.get_prompt(prompt_id)
             if not prompt:
+                logger.error(f"Prompt {prompt_id} not found")
                 return None, "Prompt not found"
+                
+            logger.debug(f"Found prompt: id={prompt.id}, name={prompt.name}, " +
+                         f"has version attr: {hasattr(prompt, 'version')}, " +
+                         f"has is_active attr: {hasattr(prompt, 'is_active')}")
 
-            # Update fields
-            update_data = {}
-            if name is not None:
-                update_data['name'] = name
-            if description is not None:
-                update_data['description'] = description
-            if content is not None:
-                update_data['content'] = content
-            if updated_by is not None:
-                update_data['updated_by'] = updated_by
-                update_data['updated_at'] = datetime.utcnow()
+            if create_new_version:
+                logger.info(f"Creating new version of prompt {prompt_id}")
+                # Create a new version of the prompt
+                current_version = prompt.version if hasattr(prompt, "version") else 1
+                logger.debug(f"Current version: {current_version}, new version will be: {current_version + 1}")
+                
+                # Create a new prompt with the original as the parent
+                new_prompt_data = {
+                    'id': str(uuid.uuid4()),
+                    'project_id': prompt.project_id,
+                    'key': f"{prompt.key}_v{current_version + 1}",  # Add version to key to make it unique
+                    'name': name or prompt.name,
+                    'description': description or prompt.description,
+                    'system_prompt': system_prompt or prompt.system_prompt,
+                    'user_prompt': user_prompt or prompt.user_prompt,
+                    'is_active': True,  # New version is active by default
+                    'version': current_version + 1,  # Increment version
+                    'parent_id': str(prompt_id),  # Set parent ID to original prompt
+                    'created_by': updated_by or prompt.created_by,
+                    'created_at': datetime.utcnow()
+                }
+                logger.debug(f"Creating new prompt with data: {new_prompt_data}")
+                
+                try:
+                    new_prompt = self.create(new_prompt_data)
+                    logger.debug(f"New prompt created: {new_prompt and new_prompt.id}")
+                    
+                    if not new_prompt:
+                        logger.error("Failed to create new prompt version")
+                        return None, "Failed to create new prompt version"
+                    
+                    # Deactivate the original prompt if the new one is active
+                    if hasattr(prompt, "is_active") and prompt.is_active:
+                        logger.debug(f"Deactivating original prompt {prompt.id}")
+                        update_result = self.update(prompt, {'is_active': False})
+                        logger.debug(f"Original prompt deactivated: {update_result is not None}")
+                    
+                    # Log activity
+                    logger.debug(f"Logging activity for new prompt version: {new_prompt.id}")
+                    self._log_activity(updated_by or prompt.created_by, models.ActivityType.CREATE_PROMPT_VERSION, {
+                        "prompt_id": str(new_prompt.id),
+                        "original_prompt_id": str(prompt_id),
+                        "project_id": str(prompt.project_id),
+                        "name": name or prompt.name,
+                        "version": current_version + 1
+                    })
+                    
+                    logger.info(f"Successfully created new prompt version: {new_prompt.id} (version {current_version + 1})")
+                    return new_prompt, ""
+                except Exception as inner_e:
+                    logger.exception(f"Exception during new version creation: {str(inner_e)}")
+                    return None, f"Error creating new version: {str(inner_e)}"
+            else:
+                logger.info(f"Updating existing prompt {prompt_id}")
+                # Update fields
+                update_data = {}
+                if name is not None:
+                    update_data['name'] = name
+                if description is not None:
+                    update_data['description'] = description
+                if content is not None:
+                    update_data['content'] = content
+                if system_prompt is not None:
+                    update_data['system_prompt'] = system_prompt
+                if user_prompt is not None:
+                    update_data['user_prompt'] = user_prompt
+                if is_active is not None:
+                    update_data['is_active'] = is_active
+                if updated_by is not None:
+                    update_data['updated_by'] = updated_by
+                    update_data['updated_at'] = datetime.utcnow()
 
-            updated_prompt = self.update(prompt, update_data)
-            if not updated_prompt:
-                return None, "Failed to update prompt"
+                logger.debug(f"Updating prompt with data: {update_data.keys()}")
+                updated_prompt = self.update(prompt, update_data)
+                if not updated_prompt:
+                    logger.error("Failed to update prompt")
+                    return None, "Failed to update prompt"
 
-            # Log activity
-            self._log_activity(updated_by or prompt.created_by, models.ActivityType.UPDATE_PROMPT, {
-                "prompt_id": prompt_id,
-                "project_id": prompt.project_id,
-                "updated_fields": [k for k, v in update_data.items() if v is not None]
-            })
+                # Log activity
+                logger.debug(f"Logging activity for updated prompt: {prompt_id}")
+                self._log_activity(updated_by or prompt.created_by, models.ActivityType.UPDATE_PROMPT, {
+                    "prompt_id": prompt_id,
+                    "project_id": prompt.project_id,
+                    "updated_fields": [k for k, v in update_data.items() if v is not None]
+                })
 
-            return updated_prompt, ""
+                logger.info(f"Successfully updated prompt: {prompt_id}")
+                return updated_prompt, ""
         except Exception as e:
-            logger.error(f"Error updating prompt: {str(e)}")
+            logger.exception(f"Error updating prompt: {str(e)}")
             return None, str(e)
 
     def delete_prompt(self, prompt_id: uuid.UUID) -> bool:

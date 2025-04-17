@@ -16,9 +16,15 @@ import uvicorn
 
 # Local application imports
 from app.config import settings
-from app.logger import get_logger
+from app.logger import get_logger, configure_logging
 from app.middleware import LoggingMiddleware, AuthRedirectMiddleware, SettingsContextMiddleware
 from app.error_handlers import not_found_error, server_error
+
+# Configure logging
+configure_logging()
+
+# Initialize logger
+logger = get_logger(__name__)
 
 # Router registry
 ROUTER_REGISTRY: Dict[str, Type[APIRouter]] = {
@@ -33,8 +39,6 @@ ROUTER_REGISTRY: Dict[str, Type[APIRouter]] = {
     "common": "app.routers.common.router"
 }
 
-# Initialize logger
-logger = get_logger(__name__)
 # Development imports (conditional)
 if settings.ENVIRONMENT.lower() != "production":
     ROUTER_REGISTRY["dev"] = "app.routers.dev.dev_router"

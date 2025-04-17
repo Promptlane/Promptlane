@@ -4,6 +4,18 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="/static/css/compare.css">
+<style>
+/* Custom styles for version dropdown */
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+}
+</style>
 {% endblock %}
 
 {% block nav_items %}
@@ -113,18 +125,20 @@
             {% if prompt.versions|length > 1 %}
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Version History</h5>
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Version Information</h5>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Version {{ prompt.version }} <span class="badge bg-success ms-1">Active</span>
+                            Version {{ prompt.version }} {% if prompt.is_active %}<span class="badge bg-success ms-1">Active</span>{% endif %}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            {% for version in prompt.versions %}
+                            <!-- Debug versions count: {{ prompt.versions|length }} versions -->
+                            {% for version in prompt.versions|sort(attribute='version') %}
+                            <!-- Debug version: {{ version.id }} (v{{ version.version }}) -->
                             <li>
-                                <a class="dropdown-item {% if version.version == prompt.version %}active{% endif %}" 
-                                   href="/projects/{{ project.id }}/prompts/{{ prompt.id }}?version={{ version.version }}">
+                                <a class="dropdown-item {% if version.id == prompt.id %}active{% endif %}" 
+                                   href="/projects/{{ project.id }}/prompts/{{ version.id }}">
                                     Version {{ version.version }}
-                                    {% if version.version == prompt.version %}
+                                    {% if version.is_active %}
                                     <span class="badge bg-success ms-1">Active</span>
                                     {% endif %}
                                     <div class="small text-muted">
@@ -137,9 +151,10 @@
                     </div>
                 </div>
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i> You're viewing version {{ prompt.version }} of this prompt. This prompt has {{ prompt.versions|length }} versions.
+                    {% set total_versions = prompt.versions|length %}
+                    <i class="bi bi-info-circle me-2"></i> You're viewing version {{ prompt.version }} of this prompt. This prompt has {{ total_versions }} versions in total.
                     {% if not prompt.is_active %}
-                    <strong>Note:</strong> This is not the active version. <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/set-active?version={{ prompt.version }}">Set as active</a>
+                    <strong>Note:</strong> This is not the active version. <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}/set-active">Set as active</a>
                     {% endif %}
                 </div>
             </div>
@@ -232,92 +247,89 @@
         
         {% if prompt.versions|length > 1 %}
         <div class="tab-pane fade" id="compare-tab-pane" role="tabpanel" aria-labelledby="compare-tab" tabindex="0">
-            <!-- Compare Mode -->
-            <div class="mb-4">
-                <h5 class="mb-3"><i class="bi bi-columns-gap me-2"></i> Compare Versions</h5>
-                
-                <div class="row mb-4">
-                    <div class="col-md-5">
-                        <label for="version1" class="form-label">Version 1</label>
-                        <select class="form-select" id="version1">
-                            {% for version in prompt.versions %}
-                            <option value="{{ version.version }}" {% if version.version == prompt.version %}selected{% endif %}>
-                                Version {{ version.version }} 
-                                {% if version.is_active %}(Active){% endif %}
-                                - {{ version.updated_at or version.created_at }}
+            <div class="mb-3">
+                <h3 class="mb-3">Compare Versions</h3>
+                <p class="text-muted">Select two versions to compare their differences.</p>
+            </div>
+
+            {% if prompt.versions|length > 1 %}
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="version1Selector">
+                            {% for v in prompt.versions %}
+                            <option value="{{ v.version }}" 
+                                {% if v.version == prompt.version %}selected{% endif %}>
+                                Version {{ v.version }} {% if v.is_active %}(Active){% endif %} - {{ v.created_at }}
                             </option>
                             {% endfor %}
                         </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end justify-content-center">
-                        <div class="d-none d-md-block">
-                            <button type="button" class="btn btn-outline-secondary" id="swapVersionsBtn">
-                                <i class="bi bi-arrow-left-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-5">
-                        <label for="version2" class="form-label">Version 2</label>
-                        <select class="form-select" id="version2">
-                            {% for version in prompt.versions %}
-                            <option value="{{ version.version }}" {% if version.version == prompt.versions[-1].version and prompt.version != prompt.versions[-1].version %}selected{% elif loop.first and prompt.version == prompt.versions[-1].version %}selected{% endif %}>
-                                Version {{ version.version }} 
-                                {% if version.is_active %}(Active){% endif %}
-                                - {{ version.updated_at or version.created_at }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <label for="version1Selector">Version 1</label>
                     </div>
                 </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-4">
-                    <button type="button" class="btn btn-primary" id="compareBtn">
-                        <i class="bi bi-columns-gap me-1"></i> Compare
-                    </button>
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="version2Selector">
+                            {% for v in prompt.versions %}
+                            <option value="{{ v.version }}" 
+                                {% if v.version == prompt.version and prompt.version > 1 %}{% elif v.version == prompt.version - 1 %}selected{% endif %}>
+                                Version {{ v.version }} {% if v.is_active %}(Active){% endif %} - {{ v.created_at }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <label for="version2Selector">Version 2</label>
+                    </div>
                 </div>
             </div>
 
-            <div id="comparisonResult" class="mt-4" style="display: none;">
-                <div class="comparison-container">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span id="version1Title">Version <span id="v1Num"></span></span>
-                                    <span id="version1Badge" class="badge bg-success">Active</span>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="mb-2">System Prompt</h6>
-                                    <div id="version1System" class="prompt-section mb-4"></div>
-                                    
-                                    <h6 class="mb-2">User Prompt</h6>
-                                    <div id="version1User" class="prompt-section"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span id="version2Title">Version <span id="v2Num"></span></span>
-                                    <span id="version2Badge" class="badge bg-secondary d-none">Active</span>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="mb-2">System Prompt</h6>
-                                    <div id="version2System" class="prompt-section highlight-changes mb-4"></div>
-                                    
-                                    <h6 class="mb-2">User Prompt</h6>
-                                    <div id="version2User" class="prompt-section highlight-changes"></div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="d-grid mb-4">
+                <button class="btn btn-primary" id="compareButton">
+                    <i class="bi bi-columns-gap me-2"></i> Compare Versions
+                </button>
+            </div>
+
+            <div id="comparisonResults" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Comparison Results</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="sideBySideView">Side by Side</button>
+                        <button type="button" class="btn btn-outline-secondary" id="inlineView">Inline</button>
                     </div>
                 </div>
-                
-                <div class="mt-3 text-center">
-                    <a href="#" id="setActiveBtn" class="btn btn-sm btn-outline-primary">Set Version <span id="setActiveVersion"></span> as Active</a>
+
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2 mb-3">Name</h6>
+                    <div class="compare-content" id="nameCompare"></div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2 mb-3">System Prompt</h6>
+                    <div class="compare-content" id="systemPromptCompare"></div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2 mb-3">User Prompt</h6>
+                    <div class="compare-content" id="userPromptCompare"></div>
                 </div>
             </div>
+
+            <div id="loadingComparison" class="text-center my-5 d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Comparing versions...</p>
+            </div>
+
+            <div id="comparisonError" class="alert alert-danger d-none">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span id="errorMessage">Error comparing versions.</span>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i> 
+                At least two versions are needed to compare. This prompt only has one version.
+            </div>
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -396,12 +408,15 @@
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
+{% block scripts %}
 <!-- Include jQuery if not already loaded -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
 <!-- Include diff library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/4.0.2/diff.min.js"></script>
+
+<!-- Include prompt edit script -->
+<script src="{{ url_for('static', path='js/prompt-edit.js') }}"></script>
 
 <!-- jQuery-based version comparison script -->
 <script>
