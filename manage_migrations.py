@@ -1,3 +1,22 @@
+#!/usr/bin/env python3
+"""
+Migration management script for Promptlane
+
+This script provides an easy way to:
+1. Check for missing database tables
+2. Create migrations for new models or model changes
+3. Apply pending migrations
+4. Show migration status
+
+Usage:
+  python manage_migrations.py                # Check, create, and apply migrations
+  python manage_migrations.py --check        # Only check for missing tables
+  python manage_migrations.py --create       # Create migration if needed, don't apply
+  python manage_migrations.py --apply        # Apply existing migrations
+  python manage_migrations.py --status       # Show migration status
+  python manage_migrations.py --message "Add new tables"   # Custom migration message
+"""
+
 import os
 import sys
 import logging
@@ -7,8 +26,11 @@ import alembic.config
 from sqlalchemy import inspect, text
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("migration-manager")
 
 # Add the app directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -28,6 +50,7 @@ def get_database_tables(session):
 
 def check_missing_tables():
     """Check for models that don't have corresponding tables in the database"""
+    logger.info("Checking for missing database tables...")
     session = db.get_session()
     try:
         # Get tables from models and database
@@ -75,7 +98,7 @@ def create_migration(message="Update database schema"):
 
 def apply_migrations():
     """Apply all pending migrations"""
-    logger.info("Applying database migrations")
+    logger.info("Applying database migrations...")
     
     alembic_ini_path = Path(__file__).parent / "alembic.ini"
     if not alembic_ini_path.exists():
@@ -95,16 +118,46 @@ def apply_migrations():
         logger.error(f"Error applying migrations: {str(e)}")
         return False
 
-def manage_migrations(auto_apply=True):
+def show_migration_status():
+    """Show the current migration status"""
+    logger.info("Checking migration status...")
+    
+    alembic_ini_path = Path(__file__).parent / "alembic.ini"
+    if not alembic_ini_path.exists():
+        logger.error(f"Alembic config file not found at {alembic_ini_path}")
+        return False
+    
+    try:
+        alembic_args = [
+            '-c', str(alembic_ini_path),
+            'current'
+        ]
+        
+        alembic.config.main(argv=alembic_args)
+        
+        # Also show pending migrations (history)
+        logger.info("Pending migrations:")
+        history_args = [
+            '-c', str(alembic_ini_path),
+            'history', '--indicate-current'
+        ]
+        
+        alembic.config.main(argv=history_args)
+        return True
+    except Exception as e:
+        logger.error(f"Error checking migration status: {str(e)}")
+        return False
+
+def manage_migrations(auto_apply=True, custom_message=None):
     """Check for missing tables and manage migrations"""
     tables_missing, missing_tables = check_missing_tables()
     
     if tables_missing:
         # Construct a meaningful message based on missing tables
-        if missing_tables:
+        if missing_tables and not custom_message:
             message = f"Add {', '.join(missing_tables)} tables"
         else:
-            message = "Update database schema"
+            message = custom_message or "Update database schema"
             
         # Create migration
         if create_migration(message):
@@ -123,7 +176,13 @@ def manage_migrations(auto_apply=True):
             logger.error("Failed to create migration")
             return False
     else:
-        logger.info("No missing tables detected")
+        logger.info("No model changes detected")
+        
+        # If no tables are missing but auto_apply is True, still apply any pending migrations
+        if auto_apply:
+            logger.info("Checking for any pending migrations...")
+            return apply_migrations()
+        
         return True
 
 if __name__ == "__main__":
@@ -131,16 +190,23 @@ if __name__ == "__main__":
     parser.add_argument('--check', action='store_true', help='Check for missing tables only')
     parser.add_argument('--create', action='store_true', help='Create migration if needed')
     parser.add_argument('--apply', action='store_true', help='Apply pending migrations')
-    parser.add_argument('--message', type=str, default=None, help='Migration message')
+    parser.add_argument('--status', action='store_true', help='Show migration status')
+    parser.add_argument('--message', type=str, default=None, help='Custom migration message')
     
     args = parser.parse_args()
     
     if args.check:
         check_missing_tables()
     elif args.create:
-        create_migration(args.message or "Update database schema")
+        tables_missing, _ = check_missing_tables()
+        if tables_missing:
+            create_migration(args.message or "Update database schema")
+        else:
+            logger.info("No model changes detected, no migration created")
     elif args.apply:
         apply_migrations()
+    elif args.status:
+        show_migration_status()
     else:
         # Default behavior: check, create and apply migrations
-        manage_migrations(auto_apply=True) 
+        manage_migrations(auto_apply=True, custom_message=args.message) 
