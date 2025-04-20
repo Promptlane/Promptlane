@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from sqlalchemy import inspect
 
-from app.db.models import Base, User, Team, TeamMember, Project, Prompt, Activity, ActivityType, TeamRole
+from app.db.models import Base, User, Team, TeamMember, Project, Prompt, Activity, ActivityType, TeamRole, Comment, Reply
 from app.db.database import db
 from app.managers.user_manager import UserManager
 from app.managers.project_manager import ProjectManager
@@ -63,9 +63,17 @@ def create_tables(db=None):
     existing_tables = inspector.get_table_names()
     
     # Check if tables already exist
-    if 'users' in existing_tables and 'projects' in existing_tables and 'prompts' in existing_tables and 'activities' in existing_tables:
-        logger.info("Tables already exist, skipping creation")
-        return
+    if ('users' in existing_tables and 'projects' in existing_tables and 
+        'prompts' in existing_tables and 'activities' in existing_tables):
+        
+        # Check specifically for comment tables
+        comment_tables_exist = 'prompt_comments' in existing_tables and 'comment_replies' in existing_tables
+        
+        if comment_tables_exist:
+            logger.info("All tables already exist, skipping creation")
+            return
+        else:
+            logger.info("Some tables exist but comment tables are missing. Creating missing tables...")
     
     # Create tables
     logger.info("Creating database tables...")

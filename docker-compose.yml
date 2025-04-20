@@ -29,7 +29,7 @@ services:
     volumes:
       - promptlane_db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5342"
+      - "5432:5432"
     networks:
       - promptlane-network
     healthcheck:

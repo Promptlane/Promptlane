@@ -77,7 +77,7 @@ wait_for_postgres() {
     return 1
 }
 
-# Wait for database to be ready
+#Wait for database to be ready
 if ! wait_for_postgres "$POSTGRES_HOST" "$POSTGRES_PORT" 60 5; then
     echo "Error: Could not connect to PostgreSQL at ${POSTGRES_HOST}:${POSTGRES_PORT}"
     echo "Database connection details:"
