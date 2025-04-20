@@ -2,11 +2,12 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import QueuePool
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, InterfaceError
 import threading
 import time
 import logging
-from typing import Optional
+from typing import Optional, Generator
+from contextlib import contextmanager
 from app.config import settings
 import os
 
@@ -29,16 +30,16 @@ class Database:
         return cls._instance
 
     def __init__(self):
-        if self._engine is None:
+        if type(self)._engine is None:
             with self._lock:
-                if self._engine is None:
+                if type(self)._engine is None:
                     self._initialize_engine()
 
     def _initialize_engine(self):
         """Initialize the database engine with proper configuration and event handlers"""
         try:
             print(f"Attempting to connect to database at {settings.DATABASE.URL}")
-            self._engine = create_engine(
+            type(self)._engine = create_engine(
                 str(settings.DATABASE.URL),
                 poolclass=QueuePool,
                 pool_pre_ping=settings.DATABASE.POOL_PRE_PING,
@@ -56,18 +57,17 @@ class Database:
             )
 
             # Configure session factory with scoped_session for thread safety
-            self._SessionLocal = scoped_session(
+            type(self)._SessionLocal = scoped_session(
                 sessionmaker(
-                    autocommit=settings.DATABASE.SESSION_AUTOCOMMIT,
                     autoflush=settings.DATABASE.SESSION_AUTOFLUSH,
-                    bind=self._engine,
+                    bind=type(self)._engine,
                     expire_on_commit=settings.DATABASE.SESSION_EXPIRE_ON_COMMIT
                 )
             )
 
             # Add event listeners
             self._setup_event_listeners()
-            
+
             logger.info("Database engine initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize database engine: {str(e)}")
@@ -81,22 +81,29 @@ class Database:
 
         @event.listens_for(self._engine, "checkout")
         def checkout(dbapi_connection, connection_record, connection_proxy):
-            logger.debug("Connection checked out from pool")
+            cursor = dbapi_connection.cursor()
+            try:
+                cursor.execute("SELECT 1")
+            except Exception:
+                connection_proxy._pool.invalidate(dbapi_connection)
+                raise
+            finally:
+                cursor.close()
 
         @event.listens_for(self._engine, "checkin")
         def checkin(dbapi_connection, connection_record):
-            logger.debug("Connection returned to pool")
+            pass
 
         @event.listens_for(self._engine, "reset")
         def reset(dbapi_connection, connection_record):
-            logger.debug("Connection reset")
+            pass
 
     def get_session(self) -> Optional[scoped_session]:
         """Get a database session with retry mechanism"""
         for attempt in range(self._connection_retries):
             try:
                 return self._SessionLocal()
-            except OperationalError as e:
+            except (OperationalError, InterfaceError) as e:
                 if attempt == self._connection_retries - 1:
                     logger.error(f"Failed to get database session after {self._connection_retries} attempts: {str(e)}")
                     raise
@@ -137,24 +144,32 @@ db = Database()
 # Base class for SQLAlchemy models
 Base = declarative_base()
 
-# Import all models to ensure they are registered with SQLAlchemy
-from app.db.models import (
-    activity,
-    user,
-    team,
-    project,
-    prompt
-)
-
 # Dependency to get DB session with proper error handling
 def get_db():
     session = None
     try:
         session = db.get_session()
         yield session
+        session.commit()
     except SQLAlchemyError as e:
+        if session:
+            session.rollback()
         logger.error(f"Database error: {str(e)}")
         raise
     finally:
         if session:
-            db.close_session(session) 
+            db.close_session(session)
+
+@contextmanager
+def session_scope() -> Generator:
+    """Provide a transactional scope around a series of operations."""
+    session = db.get_session()
+    try:
+        yield session
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Transaction rolled back due to error: {str(e)}")
+        raise
+    finally:
+        db.close_session(session)

@@ -9,6 +9,7 @@ from .team_member import TeamMember, TeamRole
 from .project import Project
 from .prompt import Prompt
 from .activity import Activity, ActivityType
+from .comment import Comment, Reply
 
 __all__ = [
     'Base',
@@ -19,5 +20,7 @@ __all__ = [
     'Project',
     'Prompt',
     'Activity',
-    'ActivityType'
+    'ActivityType',
+    'Comment',
+    'Reply'
 ] 
