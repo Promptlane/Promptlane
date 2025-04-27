@@ -38,7 +38,6 @@ class Database:
     def _initialize_engine(self):
         """Initialize the database engine with proper configuration and event handlers"""
         try:
-            print(f"Attempting to connect to database at {settings.DATABASE.URL}")
             type(self)._engine = create_engine(
                 str(settings.DATABASE.URL),
                 poolclass=QueuePool,
