@@ -13,6 +13,8 @@ from app.managers.activity_manager import ActivityManager
 from app.db import models
 from app.models.activity import ActivityType
 from app.dependencies.auth import require_auth
+from app.managers.user_manager import UserManager
+from app.utils.format_date import format_relative_time
 
 # Create router
 router = APIRouter(tags=["prompts-web"])
@@ -39,6 +41,7 @@ async def prompts_page(
 ):
     """Render the prompts list page"""
     user_id = uuid.UUID(request.session["user_id"])
+    user_manager = UserManager()
     
     if project_id:
         try:
@@ -56,8 +59,30 @@ async def prompts_page(
                 detail="Invalid project ID format"
             )
     else:
-        prompts = prompt_manager.get_user_prompts(user_id)
+        # Show all prompts created by the user, irrespective of project
+        prompts = [p for p in prompt_manager.get_all_prompts() if str(p.created_by) == str(user_id)]
         project = None
+    
+    prompt_dicts = []
+    for prompt in prompts:
+        # Get project name
+        project_obj = project_manager.get_project(prompt.project_id)
+        project_name = project_obj.name if project_obj else "Unknown Project"
+        # Get creator username
+        creator = user_manager.get_user(prompt.created_by)
+        created_by = creator.username if creator else "Unknown"
+        # Get variables (if attribute exists)
+        variables = getattr(prompt, "variables", [])
+        prompt_dicts.append({
+            "id": str(prompt.id),
+            "name": prompt.name,
+            "description": prompt.description,
+            "project_id": str(prompt.project_id),
+            "project_name": project_name,
+            "created_at": format_relative_time(prompt.created_at),
+            "created_by": created_by,
+            "variables": variables
+        })
     
     return templates.TemplateResponse(
         "prompts/list.html",
@@ -65,16 +90,7 @@ async def prompts_page(
             "request": request,
             "user": request.session["user"],
             "project": project,
-            "prompts": [
-                {
-                    "id": str(prompt.id),
-                    "name": prompt.name,
-                    "description": prompt.description,
-                    "created_at": prompt.created_at,
-                    "updated_at": prompt.updated_at
-                }
-                for prompt in prompts
-            ]
+            "prompts": prompt_dicts
         }
     )
 
