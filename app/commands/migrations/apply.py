@@ -1,12 +1,11 @@
 import click
 import alembic.config
 from pathlib import Path
-from .version import check_version_exists
 
 @click.command()
 def apply_migrations():
-    """Apply all pending migrations."""
-    click.echo("Applying database migrations...")
+    """Apply pending migrations."""
+    click.echo("Applying migrations...")
     
     alembic_ini_path = Path(__file__).parent.parent.parent.parent / "alembic.ini"
     if not alembic_ini_path.exists():
@@ -18,7 +17,6 @@ def apply_migrations():
             '-c', str(alembic_ini_path),
             'upgrade', 'head'
         ]
-        
         alembic.config.main(argv=alembic_args)
         click.echo("Migrations applied successfully")
         return True
