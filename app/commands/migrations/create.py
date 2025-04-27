@@ -35,7 +35,12 @@ def create_migration(message):
         
         # Create meaningful message if not provided
         if not message:
-            message = f"Add {', '.join(missing_tables)} tables"
+            # Format the message based on missing tables
+            if len(missing_tables) == 1:
+                message = f"Add {missing_tables.pop()} table"
+            else:
+                message = f"Add {', '.join(sorted(missing_tables))} tables"
+            click.echo(f"Using auto-generated message: {message}")
             
         # Create new migration
         alembic_args = [

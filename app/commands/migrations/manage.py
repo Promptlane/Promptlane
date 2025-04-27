@@ -16,24 +16,32 @@ def manage_migrations(auto_apply, message):
     if missing_tables:
         # Construct a meaningful message based on missing tables
         if not message:
-            message = f"Add {', '.join(missing_tables)} tables"
+            if len(missing_tables) == 1:
+                message = f"Add {missing_tables.pop()} table"
+            else:
+                message = f"Add {', '.join(sorted(missing_tables))} tables"
+            click.echo(f"Using auto-generated message: {message}")
             
-        # Create migration
-        if create_migration(message):
+        # Create migration with the message
+        try:
+            # Create a new context for the create_migration command
+            ctx = click.Context(create_migration)
+            ctx.params = {'message': message}
+            create_migration.invoke(ctx)
+            
             click.echo("Migration created for missing tables")
             
             # Apply migrations if auto_apply is True
             if auto_apply:
-                if apply_migrations():
-                    click.echo("Successfully applied migrations")
-                else:
-                    click.echo("Failed to apply migrations", err=True)
-        else:
-            click.echo("Failed to create migration", err=True)
+                ctx = click.Context(apply_migrations)
+                apply_migrations.invoke(ctx)
+        except Exception as e:
+            click.echo(f"Failed to create migration: {str(e)}", err=True)
     else:
         click.echo("No model changes detected")
         
         # If no tables are missing but auto_apply is True, still apply any pending migrations
         if auto_apply:
             click.echo("Checking for any pending migrations...")
-            apply_migrations()
+            ctx = click.Context(apply_migrations)
+            apply_migrations.invoke(ctx)
