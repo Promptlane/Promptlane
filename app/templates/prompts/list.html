@@ -71,7 +71,7 @@
     </div>
     {% else %}
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle prompts-table">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -86,14 +86,16 @@
                 {% for prompt in prompts %}
                 <tr>
                     <td>
+                        <span class="prompt-icon"><i class="bi bi-file-earmark-text"></i></span>
                         <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="fw-semibold text-decoration-none">
                             {{ prompt.name }}
-                            {% if not prompt.enabled|default(true) %}
-                            <span class="badge bg-secondary ms-1">Disabled</span>
-                            {% endif %}
                         </a>
+                        {% if not prompt.enabled|default(true) %}
+                        <span class="badge bg-secondary ms-1">Disabled</span>
+                        {% endif %}
                     </td>
                     <td>
+                        <span class="project-icon"><i class="bi bi-folder"></i></span>
                         <a href="/projects/{{ prompt.project_id }}/prompts" class="text-decoration-none">
                             {{ prompt.project_name }}
                         </a>
@@ -101,7 +103,7 @@
                     <td>
                         {% if prompt.variables|length > 0 %}
                             {% for variable in prompt.variables %}
-                            <span class="badge-variable">{{ variable }}</span>
+                            <span class="badge-variable" title="Prompt variable">{{ variable }}</span>
                             {% endfor %}
                         {% else %}
                             <small class="text-muted">None</small>
@@ -111,11 +113,11 @@
                     <td>{{ prompt.created_by }}</td>
                     <td>
                         <div class="btn-group">
-                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-secondary">
+                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-secondary" title="View">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}/use" class="btn btn-sm btn-outline-primary" {% if not prompt.enabled|default(true) %}disabled title="Prompt is disabled"{% endif %}>
-                                <i class="bi bi-play-fill"></i> Use
+                            <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}/use" class="btn btn-sm btn-outline-primary" title="Use" {% if not prompt.enabled|default(true) %}disabled{% endif %}>
+                                <i class="bi bi-play-fill"></i>
                             </a>
                         </div>
                     </td>
