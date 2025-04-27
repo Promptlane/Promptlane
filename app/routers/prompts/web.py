@@ -1,7 +1,7 @@
 """
 Prompts web routes
 """
-from fastapi import APIRouter, Request, HTTPException, status, Depends, Form
+from fastapi import APIRouter, Request, HTTPException, status, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templates import templates
 from typing import List, Dict, Any, Optional
@@ -36,6 +36,9 @@ def get_activity_manager() -> ActivityManager:
 async def prompts_page(
     request: Request,
     project_id: Optional[str] = None,
+    search: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None),
+    filter: Optional[str] = Query(None),
     prompt_manager: PromptManager = Depends(get_prompt_manager),
     project_manager: ProjectManager = Depends(get_project_manager)
 ):
@@ -62,6 +65,29 @@ async def prompts_page(
         # Show all prompts created by the user, irrespective of project
         prompts = [p for p in prompt_manager.get_all_prompts() if str(p.created_by) == str(user_id)]
         project = None
+    
+    # --- Search ---
+    if search:
+        prompts = [
+            p for p in prompts
+            if search.lower() in p.name.lower() or search.lower() in (p.description or "").lower()
+        ]
+    # --- Filter ---
+    if filter == "with_vars":
+        prompts = [p for p in prompts if getattr(p, "variables", [])]
+    elif filter == "no_vars":
+        prompts = [p for p in prompts if not getattr(p, "variables", [])]
+    elif filter == "my_prompts":
+        prompts = [p for p in prompts if str(p.created_by) == str(user_id)]
+    # --- Sort ---
+    if sort == "name_asc":
+        prompts = sorted(prompts, key=lambda p: p.name.lower())
+    elif sort == "name_desc":
+        prompts = sorted(prompts, key=lambda p: p.name.lower(), reverse=True)
+    elif sort == "created_asc":
+        prompts = sorted(prompts, key=lambda p: p.created_at)
+    elif sort == "created_desc":
+        prompts = sorted(prompts, key=lambda p: p.created_at, reverse=True)
     
     prompt_dicts = []
     for prompt in prompts:
@@ -90,7 +116,10 @@ async def prompts_page(
             "request": request,
             "user": request.session["user"],
             "project": project,
-            "prompts": prompt_dicts
+            "prompts": prompt_dicts,
+            "search": search,
+            "sort": sort,
+            "filter": filter
         }
     )
 
