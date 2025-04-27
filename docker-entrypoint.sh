@@ -88,20 +88,23 @@ if ! wait_for_postgres "$POSTGRES_HOST" "$POSTGRES_PORT" 60 5; then
     exit 1
 fi
 
-echo "PostgreSQL is reachable. Starting database migrations..."
+echo "PostgreSQL is reachable. Starting database setup..."
 
-# Run comprehensive migration management
+# Run migrations
 echo "Checking for model changes and applying migrations..."
-python manage_migrations.py || {
+python manage.py migrations manage || {
     echo "Warning: Migration management encountered issues."
     echo "This could be because the database doesn't exist yet or isn't properly configured."
     echo "The application will still start, but some features may not work correctly."
 }
 
-# Initialize test data only in development
+# Initialize test data and create superuser only in development
 if [ "$ENVIRONMENT" != "production" ]; then
     echo "Initializing test data..."
-    python init.py || echo "Warning: Test data initialization failed, but continuing"
+    python manage.py db init || echo "Warning: Test data initialization failed, but continuing"
+    
+    echo "Creating superuser if not exists..."
+    python manage.py auth create-superuser --username admin --email admin@promptlane.com --password admin123 || echo "Warning: Superuser creation failed, but continuing"
 fi
 
 # Start the application
