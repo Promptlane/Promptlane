@@ -29,9 +29,17 @@
             <form method="POST" action="/projects/{{ project.id }}/prompts">
                 <div class="mb-4">
                     <label for="name" class="form-label fw-semibold">Prompt Name</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Give your prompt a descriptive name" required autofocus>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Give your prompt a descriptive name" required autofocus oninput="generateKey()">
                     <div class="form-text">
                         <i class="bi bi-info-circle me-1"></i> This will be used to identify your prompt and will also create a URL slug.
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="key" class="form-label fw-semibold">Prompt Key</label>
+                    <input type="text" class="form-control" id="key" name="key" placeholder="Enter a unique key for this prompt" required>
+                    <div class="form-text">
+                        <i class="bi bi-key me-1"></i> This key must be unique within the project and will be used as an identifier.
                     </div>
                 </div>
                 
@@ -89,4 +97,30 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let keyManuallyEdited = false;
+
+    function generateKey() {
+        if (!keyManuallyEdited) {
+            const nameInput = document.getElementById('name');
+            const keyInput = document.getElementById('key');
+            
+            // Convert to lowercase, replace spaces with underscores, and remove special characters
+            const generatedKey = nameInput.value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '')
+                .replace(/\s+/g, '_')
+                .trim();
+            
+            keyInput.value = generatedKey;
+        }
+    }
+
+    document.getElementById('key').addEventListener('input', function() {
+        keyManuallyEdited = true;
+    });
+</script>
 {% endblock %} 

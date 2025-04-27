@@ -186,11 +186,16 @@ class PromptManager(BaseManager):
                 current_version = prompt.version if hasattr(prompt, "version") else 1
                 logger.debug(f"Current version: {current_version}, new version will be: {current_version + 1}")
                 
+                # Get the root parent's key
+                root_parent = prompt
+                while root_parent.parent_id:
+                    root_parent = self.get_prompt(root_parent.parent_id)
+                
                 # Create a new prompt with the original as the parent
                 new_prompt_data = {
                     'id': str(uuid.uuid4()),
                     'project_id': prompt.project_id,
-                    'key': f"{prompt.key}_v{current_version + 1}",  # Add version to key to make it unique
+                    'key': f"{root_parent.key}_v{current_version + 1}",  # Use root parent's key
                     'name': name or prompt.name,
                     'description': description or prompt.description,
                     'system_prompt': system_prompt or prompt.system_prompt,
@@ -211,11 +216,9 @@ class PromptManager(BaseManager):
                         logger.error("Failed to create new prompt version")
                         return None, "Failed to create new prompt version"
                     
-                    # Deactivate the original prompt if the new one is active
-                    if hasattr(prompt, "is_active") and prompt.is_active:
-                        logger.debug(f"Deactivating original prompt {prompt.id}")
-                        update_result = self.update(prompt, {'is_active': False})
-                        logger.debug(f"Original prompt deactivated: {update_result is not None}")
+                    # Deactivate all versions in the chain
+                    logger.debug(f"Deactivating all versions in the chain for prompt {prompt_id}")
+                    prompt.deactivate_all_versions(self._db)
                     
                     # Log activity
                     logger.debug(f"Logging activity for new prompt version: {new_prompt.id}")
