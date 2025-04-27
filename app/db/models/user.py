@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, declared_attr
 from ...db.models.base import BaseModel
+from ...core.security import get_password_hash, verify_password
 
 class User(BaseModel):
     """SQLAlchemy model for users table."""
@@ -29,6 +30,14 @@ class User(BaseModel):
     @declared_attr
     def activities(cls):
         return relationship("Activity", foreign_keys="[Activity.user_id]", back_populates="user")
+
+    def set_password(self, password: str) -> None:
+        """Set the user's password."""
+        self.hashed_password = get_password_hash(password)
+
+    def verify_password(self, password: str) -> bool:
+        """Verify the user's password."""
+        return verify_password(password, self.hashed_password)
 
     def __repr__(self):
         return f"<User(username='{self.username}', email='{self.email}')>" 

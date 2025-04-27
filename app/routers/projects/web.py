@@ -148,8 +148,8 @@ async def project_detail_page(
                         ),
                         "version": prompt.version,
                         "has_history": (
-                            len(prompt.versions) > 1
-                            if hasattr(prompt, "versions")
+                            prompt.version_count > 1
+                            if hasattr(prompt, "version_count")
                             else False
                         ),
                         "variables": (
@@ -340,8 +340,8 @@ async def update_project(
                                 prompt.version if hasattr(prompt, "version") else 1
                             ),
                             "has_history": (
-                                len(prompt.versions) > 1
-                                if hasattr(prompt, "versions")
+                                prompt.version_count > 1
+                                if hasattr(prompt, "version_count")
                                 else False
                             ),
                             "variables": (
@@ -729,9 +729,11 @@ async def project_prompt_detail(
                 ),
                 "enabled": prompt.is_active if hasattr(prompt, "is_active") else True,
                 "is_active": prompt.is_active if hasattr(prompt, "is_active") else None,
-                "version": prompt.version if hasattr(prompt, "version") else 1,
+                "version": prompt.version,
                 "has_history": (
-                    len(prompt.versions) > 1 if hasattr(prompt, "versions") else False
+                    prompt.version_count > 1
+                    if hasattr(prompt, "version_count")
+                    else False
                 ),
                 "variables": prompt.variables if hasattr(prompt, "variables") else [],
                 "last_used": (
@@ -861,10 +863,10 @@ async def update_prompt(
                     "enabled": (
                         prompt.is_active if hasattr(prompt, "is_active") else True
                     ),
-                    "version": prompt.version if hasattr(prompt, "version") else 1,
+                    "version": prompt.version,
                     "has_history": (
-                        len(prompt.versions) > 1
-                        if hasattr(prompt, "versions")
+                        prompt.version_count > 1
+                        if hasattr(prompt, "version_count")
                         else False
                     ),
                     "variables": (
