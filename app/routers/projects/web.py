@@ -16,6 +16,7 @@ from app.managers.activity_manager import ActivityManager
 from app.db import models
 from app.db.models.activity import ActivityType
 from app.utils.format_date import format_datetime, format_relative_time
+from app.utils.token_counter import count_prompt_tokens
 
 # Create router
 router = APIRouter(tags=["projects-web"])
@@ -678,6 +679,12 @@ async def project_prompt_detail(
         logger.info(f"No versions found for prompt {prompt_uuid}")
 
     logger.info(f"Rendering prompt detail template with {len(versions)} versions")
+    # Calculate token counts
+    token_counts = count_prompt_tokens({
+        "system_prompt": prompt.system_prompt,
+        "user_prompt": prompt.user_prompt
+    })
+
     # Return the template response
     # Log whether the prompt is active
     is_active = getattr(prompt, "is_active", None)
@@ -741,6 +748,8 @@ async def project_prompt_detail(
                     else None
                 ),
                 "versions": versions,
+                "system_tokens": token_counts["system_tokens"],
+                "user_tokens": token_counts["user_tokens"]
             },
         },
     )
