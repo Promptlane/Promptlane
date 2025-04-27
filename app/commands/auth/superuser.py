@@ -23,7 +23,7 @@ def create_superuser(username, email, password):
         user = User(
             username=username,
             email=email,
-            is_superuser=True,
+            is_admin=True,
             is_active=True
         )
         user.set_password(password)
