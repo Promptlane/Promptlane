@@ -14,6 +14,8 @@ from app.models.activity import UserStats, UserActivity
 from app.db.models import User, TeamMember, Activity, ActivityType
 from app.db.database import db
 from app.managers.base_manager import BaseManager
+import jwt
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -339,4 +341,28 @@ class UserManager(BaseManager):
             self._db.commit()
         except Exception as e:
             logger.error(f"Error logging activity: {str(e)}")
-            self._db.rollback() 
+            self._db.rollback()
+
+    def generate_token(self, user: User) -> str:
+        """Generate JWT token for user"""
+        payload = {
+            "user_id": str(user.id),
+            "exp": datetime.utcnow() + timedelta(minutes=settings.SECURITY.JWT_ACCESS_TOKEN_EXPIRE_MINUTES),
+            "iat": datetime.utcnow()
+        }
+        return jwt.encode(
+            payload,
+            settings.SECURITY.JWT_SECRET_KEY,
+            algorithm=settings.SECURITY.JWT_ALGORITHM
+        )
+    
+    def verify_token(self, token: str) -> Optional[User]:
+        """Verify JWT token and return user if valid"""
+        try:
+            payload = jwt.decode(token, settings.SECURITY.JWT_SECRET_KEY, algorithms=["HS256"])
+            user_id = payload.get("user_id")
+            if not user_id:
+                return None
+            return self.get_user(user_id)
+        except jwt.InvalidTokenError:
+            return None 

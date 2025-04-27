@@ -33,7 +33,10 @@ async def api_login(
         user_id=user.id
     )
     
-    # Set session data
+    # Generate JWT token
+    token = user_manager.generate_token(user)
+    
+    # Set session data for web routes
     request.session["user_id"] = str(user.id)
     request.session["username"] = user.username
     request.session["user"] = {
@@ -42,12 +45,13 @@ async def api_login(
         "is_admin": user.is_admin
     }
     
-    # Return user info
+    # Return user info and token
     return {
         "id": str(user.id),
         "username": user.username,
         "email": user.email,
-        "is_admin": user.is_admin
+        "is_admin": user.is_admin,
+        "token": token
     }
 
 @router.post("/register")
