@@ -92,6 +92,15 @@
                     
                     <h6>Variable Examples</h6>
                     <pre class="bg-light p-2 rounded"><code>Write a {{tone}} email to {{recipient}} about {{topic}}</code></pre>
+
+                    <h6>Prompt Caching</h6>
+                    <ul class="mb-0">
+                        <li>Caching is enabled for prompts with 1024+ tokens</li>
+                        <li>System caches the initial portion (prefix) of your prompt</li>
+                        <li>Cache hits reduce latency and costs</li>
+                        <li>Cached prefixes remain active for 5-10 minutes of inactivity</li>
+                        <li>During off-peak periods, caches may persist up to 1 hour</li>
+                    </ul>
                 </div>
             </div>
         </div>
