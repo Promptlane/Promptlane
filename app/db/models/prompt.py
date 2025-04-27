@@ -53,6 +53,16 @@ class Prompt(BaseModel):
             self._version_count = len(self.versions.all()) + 1  # +1 for self
         return self._version_count
 
+    def deactivate_all_versions(self, session):
+        """Deactivate all versions in the chain including self"""
+        current = self
+        while current:
+            current.is_active = False
+            session.add(current)
+            # Get parent directly from session using parent_id
+            current = session.query(Prompt).filter(Prompt.id == current.parent_id).first() if current.parent_id else None
+        session.commit()
+
     @validates('version')
     def validate_version(self, key, version):
         """Ensure version numbers are sequential within a prompt family."""

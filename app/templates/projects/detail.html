@@ -103,7 +103,10 @@
         <div class="card h-100" style="cursor: pointer;" onclick="window.location.href='/projects/{{ project.id }}/prompts/{{ prompt.id }}'">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h5 class="card-title mb-0">{{ prompt.name }}</h5>
+                    <div>
+                        <h5 class="card-title mb-0">{{ prompt.name }}</h5>
+                        <small class="text-muted">{{ prompt.key }}</small>
+                    </div>
                     <span class="badge {% if prompt.enabled|default(true) %}bg-success{% else %}bg-secondary{% endif %} rounded-pill">
                         {% if prompt.enabled|default(true) %}Enabled{% else %}Disabled{% endif %}
                     </span>

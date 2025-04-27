@@ -126,6 +126,7 @@ async def project_detail_page(
                     {
                         "id": str(prompt.id),
                         "name": prompt.name,
+                        "key": prompt.key,
                         "description": prompt.description,
                         "created_at": format_relative_time(prompt.created_at),
                         "updated_at": (
@@ -459,6 +460,7 @@ async def create_prompt(
     request: Request,
     project_id: str,
     name: str = Form(...),
+    key: str = Form(...),
     system_prompt: str = Form(...),
     user_prompt: str = Form(...),
     project_manager: ProjectManager = Depends(get_project_manager),
@@ -487,14 +489,11 @@ async def create_prompt(
             detail="Not authorized to create prompts in this project",
         )
 
-    # Generate a key from the name
-    prompt_key = name.lower().replace(" ", "_")
-
-    # Create the prompt
+    # Create the prompt with user-provided key
     prompt, error = prompt_manager.create_prompt(
         name=name,
         project_id=project_uuid,
-        key=prompt_key,
+        key=key,
         description="",  # Default empty description
         system_prompt=system_prompt,
         user_prompt=user_prompt,
