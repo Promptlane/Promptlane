@@ -11,8 +11,13 @@
   <!-- Welcome Section -->
   <section class="dashboard-welcome">
     <div class="welcome-content">
-      <h1>Welcome, {{ user.username }}</h1>
-      <p>Here's an overview of your {{ settings.APP.NAME }} activity</p>
+      <h1>Welcome back, <span class="username">{{ user.username }}</span> 👋</h1>
+      <p class="welcome-subtitle">Here's what's happening with your {{ settings.APP.NAME }} projects</p>
+    </div>
+    <div class="welcome-actions">
+      <a href="/projects/new" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-lg"></i> New Project
+      </a>
     </div>
   </section>
 
@@ -24,18 +29,12 @@
           <i class="bi bi-folder"></i>
         </div>
         <div class="stat-content">
-          <h3 class="stat-value" id="project-count">{{ stats.total_projects }}</h3>
-          <p class="stat-label">Projects</p>
+          <h3 class="stat-value">{{ stats.total_projects }}</h3>
+          <p class="stat-label">Active Projects</p>
         </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="bi bi-file-earmark-text"></i>
-        </div>
-        <div class="stat-content">
-          <h3 class="stat-value" id="prompt-count">{{ stats.total_prompts }}</h3>
-          <p class="stat-label">Prompts</p>
+        <div class="stat-trend">
+          <i class="bi bi-graph-up"></i>
+          <span>+2 this week</span>
         </div>
       </div>
       
@@ -44,8 +43,26 @@
           <i class="bi bi-people"></i>
         </div>
         <div class="stat-content">
-          <h3 class="stat-value" id="team-count">{{ stats.total_teams }}</h3>
-          <p class="stat-label">Teams</p>
+          <h3 class="stat-value">{{ stats.total_teams }}</h3>
+          <p class="stat-label">Team Members</p>
+        </div>
+        <div class="stat-trend">
+          <i class="bi bi-graph-up"></i>
+          <span>+1 this week</span>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="bi bi-activity"></i>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-value">{{ stats.recent_activity_count }}</h3>
+          <p class="stat-label">Recent Activities</p>
+        </div>
+        <div class="stat-trend">
+          <i class="bi bi-graph-up"></i>
+          <span>+5 today</span>
         </div>
       </div>
     </div>
@@ -55,28 +72,90 @@
     <!-- Projects Section -->
     <section class="dashboard-section" id="projects-section">
       <div class="section-header">
-        <h2><i class="bi bi-folder me-2"></i>Your Projects</h2>
-        <a href="/projects" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+        <div class="section-title">
+          <i class="bi bi-folder"></i>
+          <h2>Recent Projects</h2>
+        </div>
+        <div class="section-actions">
+          <a href="/projects" class="btn btn-outline-primary">
+            View All <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
       </div>
-      <div id="projects-list" class="section-content"></div>
+      <div class="section-content">
+        {% if recent_projects %}
+          <div class="projects-list">
+            {% for project in recent_projects[:3] %}
+              <div class="recent-item">
+                <span class="recent-icon"><i class="bi bi-folder"></i></span>
+                <span class="recent-title">{{ project.name }}</span>
+                <span class="recent-meta"><i class="bi bi-clock"></i> {{ project.created_at }}</span>
+                <a href="/projects/{{ project.id }}" class="recent-link" title="View"><i class="bi bi-arrow-up-right"></i></a>
+              </div>
+            {% endfor %}
+            {% if recent_projects|length > 3 %}
+              <div class="recent-more">+{{ recent_projects|length - 3 }} more</div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i class="bi bi-folder"></i>
+            </div>
+            <h3>No projects yet</h3>
+            <p>Create your first project to get started with {{ settings.APP.NAME }}</p>
+            <a href="/projects/new" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> Create Project
+            </a>
+          </div>
+        {% endif %}
+      </div>
     </section>
 
     <!-- Prompts Section -->
     <section class="dashboard-section" id="prompts-section">
       <div class="section-header">
-        <h2><i class="bi bi-file-earmark-text me-2"></i>Recent Prompts</h2>
-        <a href="/prompts" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+        <div class="section-title">
+          <i class="bi bi-file-earmark-text"></i>
+          <h2>Recent Prompts</h2>
+        </div>
+        <div class="section-actions">
+          <a href="/prompts" class="btn btn-outline-primary">
+            View All <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
       </div>
-      <div id="prompts-list" class="section-content"></div>
-    </section>
-
-    <!-- Teams Section -->
-    <section class="dashboard-section" id="teams-section">
-      <div class="section-header">
-        <h2><i class="bi bi-people me-2"></i>Your Teams</h2>
-        <a href="/teams" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+      <div class="section-content">
+        {% if recent_prompts %}
+          <div class="prompts-list">
+            {% for prompt in recent_prompts[:3] %}
+              <div class="recent-item">
+                <span class="recent-icon"><i class="bi bi-file-earmark-text"></i></span>
+                <span class="recent-title">{{ prompt.name }}</span>
+                <span class="recent-meta">
+                  <i class="bi bi-folder"></i> {{ prompt.project_name }} &nbsp;|&nbsp;
+                  <i class="bi bi-clock"></i> {{ prompt.created_at }}
+                </span>
+                <a href="/projects/{{ prompt.project_id }}/prompts/{{ prompt.id }}" class="recent-link" title="View"><i class="bi bi-arrow-up-right"></i></a>
+              </div>
+            {% endfor %}
+            {% if recent_prompts|length > 3 %}
+              <div class="recent-more">+{{ recent_prompts|length - 3 }} more</div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <h3>No prompts yet</h3>
+            <p>Create your first prompt to start building with {{ settings.APP.NAME }}</p>
+            <a href="/prompts/new" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> Create Prompt
+            </a>
+          </div>
+        {% endif %}
       </div>
-      <div id="teams-list" class="section-content"></div>
     </section>
   </div>
 </div>

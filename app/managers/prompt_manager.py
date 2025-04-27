@@ -11,6 +11,7 @@ from app.db.database import get_db
 from app.managers.base_manager import BaseManager
 import logging
 from sqlalchemy.orm import joinedload
+from app.managers.project_manager import ProjectManager
 
 logger = logging.getLogger(__name__)
 
@@ -395,4 +396,22 @@ class PromptManager(BaseManager):
             self._db.commit()
         except Exception as e:
             logger.error(f"Error logging activity: {str(e)}")
-            self._db.rollback() 
+            self._db.rollback()
+
+    def get_recent_prompts(self, user_id: uuid.UUID, limit: int = 6) -> List[models.Prompt]:
+        """Get recent prompts for a user"""
+        try:
+            # Get all projects for the user
+            project_manager = ProjectManager(self._db)
+            projects = project_manager.get_user_projects(user_id)
+            project_ids = [project.id for project in projects]
+            
+            # Get recent prompts from these projects
+            return self._db.query(models.Prompt)\
+                .filter(models.Prompt.project_id.in_(project_ids))\
+                .order_by(models.Prompt.created_at.desc())\
+                .limit(limit)\
+                .all()
+        except Exception as e:
+            logger.error(f"Error getting recent prompts: {str(e)}")
+            return [] 
