@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Text, ForeignKey, Integer, Boolean
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, declared_attr
+from sqlalchemy.orm import relationship, declared_attr, backref
 from ...db.models.base import BaseModel
 
 class Prompt(BaseModel):
@@ -23,9 +23,15 @@ class Prompt(BaseModel):
     
     @declared_attr
     def parent(cls):
-        return relationship("Prompt", remote_side=[cls.id], backref="versions")
+        # Fix circular dependency by using backref with overlaps parameter
+        return relationship(
+            "Prompt", 
+            remote_side=[cls.id], 
+            backref=backref("versions", overlaps="parent"),
+            overlaps="versions"
+        )
     
-    
+    # Comments relationship is defined in the Comment model using backref
 
     def __repr__(self):
         return f"<Prompt(key='{self.key}', name='{self.name}', version={self.version}, project_id={self.project_id})>" 

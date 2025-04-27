@@ -76,9 +76,15 @@ class BaseManager:
     def get_by_field(self, field: str, value: Any) -> Optional[Any]:
         """Get a record by field value"""
         try:
-            return self._db.query(self.model_class).filter(getattr(self.model_class, field) == value).first()
+            logger.debug(f"Attempting to get record by field '{field}' with value '{value}'")
+            result = self._db.query(self.model_class).filter(getattr(self.model_class, field) == value).first()
+            if result:
+                logger.debug(f"Successfully found record with {field}={value}")
+            else:
+                logger.debug(f"No record found with {field}={value}")
+            return result
         except Exception as e:
-            logger.error(f"Error getting record by field: {str(e)}")
+            logger.error(f"Error getting record by field '{field}' with value '{value}': {str(e)}")
             return None
 
     def get_multi_by_field(self, field: str, value: Any) -> List[Any]:

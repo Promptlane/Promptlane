@@ -72,6 +72,17 @@ def check_missing_tables():
     finally:
         db.close_session(session)
 
+def check_version_exists():
+    """Check if alembic_version table exists in the database"""
+    session = db.get_session()
+    try:
+        session.execute(text("SELECT 1 FROM alembic_version LIMIT 1"))
+        return True
+    except:
+        return False
+    finally:
+        db.close_session(session)
+
 def create_migration(message="Update database schema"):
     """Create a new migration based on model changes"""
     logger.info(f"Creating migration: {message}")
@@ -82,6 +93,24 @@ def create_migration(message="Update database schema"):
         return False
     
     try:
+        version_exists = check_version_exists()
+        if not version_exists:
+            logger.info("Fresh database detected. Applying existing migrations first...")
+            # Apply all existing migrations
+            apply_args = [
+                '-c', str(alembic_ini_path),
+                'upgrade', 'head'
+            ]
+            alembic.config.main(argv=apply_args)
+            logger.info("Existing migrations applied successfully")
+        
+        # Now check if we need to create a new migration
+        tables_missing, missing_tables = check_missing_tables()
+        if not tables_missing:
+            logger.info("No model changes detected, no new migration needed")
+            return True
+        
+        # Create new migration
         alembic_args = [
             '-c', str(alembic_ini_path),
             'revision',
