@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Request, Depends, Query
 from app.templates import templates
 from typing import Dict, List, Optional
-import app.db as db
+from app.managers.project_manager import ProjectManager
+from app.managers.prompt_manager import PromptManager
 from app.utils import format_date, extract_variables
 from app.dependencies.auth import require_auth
+from app.db.database import session_scope
 
 router = APIRouter(tags=["Search"])
 
@@ -20,53 +22,62 @@ async def search(
     query = q or ""
     search_type = type
 
-    if search_type in ["all", "projects"]:
-        # Search projects
-        all_projects = db.get_all_projects()
-        for project_id, project in all_projects.items():
-            # Skip projects that don't match the search query
-            if query and query.lower() not in project["name"].lower() and query.lower() not in project.get("description", "").lower():
-                continue
+    with session_scope() as session:
+        project_manager = ProjectManager(session)
+        prompt_manager = PromptManager(session)
+
+        if search_type in ["all", "projects"]:
+            # Search projects with joined user data
+            all_projects = project_manager.get_multi_with_relationships(
+                'creator'
+            ).all()
             
-            # Format project for display
-            prompt_count = len(project.get("prompts", {}))
-            created_at = format_date(project.get("created_at"))
-            updated_at = format_date(project.get("updated_at"))
-            created_by = db.get_username(project.get("created_by"))
+            for project in all_projects:
+                # Skip projects that don't match the search query
+                if query and query.lower() not in project.name.lower() and query.lower() not in (project.description or "").lower():
+                    continue
+                
+                # Format project for display
+                prompt_count = len(project.prompts)
+                created_at = format_date(project.created_at)
+                updated_at = format_date(project.updated_at)
+                created_by = project.creator.username if project.creator else "Unknown"
+                
+                projects.append({
+                    "id": str(project.id),
+                    "name": project.name,
+                    "description": project.description or "",
+                    "prompt_count": prompt_count,
+                    "created_at": created_at,
+                    "updated_at": updated_at,
+                    "created_by": created_by
+                })
+        
+        if search_type in ["all", "prompts"]:
+            # Search prompts with joined user data
+            all_prompts = prompt_manager.get_multi_with_relationships(
+                'creator',
+                'project'
+            ).all()
             
-            projects.append({
-                "id": project_id,
-                "name": project["name"],
-                "description": project.get("description", ""),
-                "prompt_count": prompt_count,
-                "created_at": created_at,
-                "updated_at": updated_at,
-                "created_by": created_by
-            })
-    
-    if search_type in ["all", "prompts"]:
-        # Search prompts
-        all_projects = db.get_all_projects()
-        for project_id, project in all_projects.items():
-            project_name = project["name"]
-            for prompt_id, prompt in project.get("prompts", {}).items():
+            for prompt in all_prompts:
                 # Skip prompts that don't match the search query
-                if query and query.lower() not in prompt["name"].lower() and \
-                   query.lower() not in prompt.get("system_prompt", "").lower() and \
-                   query.lower() not in prompt.get("user_prompt", "").lower():
+                if query and query.lower() not in prompt.name.lower() and \
+                   query.lower() not in (prompt.system_prompt or "").lower() and \
+                   query.lower() not in prompt.user_prompt.lower():
                     continue
                 
                 # Format prompt for display
-                variables = extract_variables(prompt.get("system_prompt", "") + prompt.get("user_prompt", ""))
-                created_at = format_date(prompt.get("created_at"))
-                updated_at = format_date(prompt.get("updated_at"))
-                created_by = db.get_username(prompt.get("created_by"))
+                variables = extract_variables((prompt.system_prompt or "") + prompt.user_prompt)
+                created_at = format_date(prompt.created_at)
+                updated_at = format_date(prompt.updated_at)
+                created_by = prompt.creator.username if prompt.creator else "Unknown"
                 
                 prompts.append({
-                    "id": prompt_id,
-                    "name": prompt["name"],
-                    "project_id": project_id,
-                    "project_name": project_name,
+                    "id": str(prompt.id),
+                    "name": prompt.name,
+                    "project_id": str(prompt.project_id),
+                    "project_name": prompt.project.name,
                     "variables": variables,
                     "created_at": created_at,
                     "updated_at": updated_at,

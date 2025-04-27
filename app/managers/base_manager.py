@@ -1,8 +1,8 @@
 """
 Base management operations and business logic
 """
-from sqlalchemy.orm import Session
-from typing import Type, Optional, List, Any, Dict
+from sqlalchemy.orm import Session, Query, joinedload
+from typing import Type, Optional, List, Any, Dict, Union
 from app.db import models
 from app.db.database import db
 import logging
@@ -16,6 +16,10 @@ class BaseManager:
         self._db = db_session or db.get_session()
         self.model_class = model_class
 
+    def get_query(self) -> Query:
+        """Get a base query object for the model"""
+        return self._db.query(self.model_class)
+
     def get(self, id: Any) -> Optional[Any]:
         """Get a record by ID"""
         try:
@@ -24,13 +28,24 @@ class BaseManager:
             logger.error(f"Error getting record: {str(e)}")
             return None
 
-    def get_multi(self, skip: int = 0, limit: int = 100) -> List[Any]:
+    def get_multi(self, skip: int = 0, limit: int = 100) -> Union[Query, List[Any]]:
         """Get multiple records with pagination"""
         try:
-            return self._db.query(self.model_class).offset(skip).limit(limit).all()
+            return self._db.query(self.model_class).offset(skip).limit(limit)
         except Exception as e:
             logger.error(f"Error getting records: {str(e)}")
             return []
+
+    def get_multi_with_relationships(self, *relationships: str) -> Query:
+        """Get multiple records with eager loading of relationships"""
+        try:
+            query = self.get_query()
+            for relationship in relationships:
+                query = query.options(joinedload(getattr(self.model_class, relationship)))
+            return query
+        except Exception as e:
+            logger.error(f"Error getting records with relationships: {str(e)}")
+            return self.get_query()
 
     def create(self, obj_in: Dict[str, Any]) -> Optional[Any]:
         """Create a new record"""
