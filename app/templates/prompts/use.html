@@ -104,38 +104,29 @@
               <button class="btn btn-outline-secondary w-100 text-start" type="button" id="modelDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 {{ selected_model.name if selected_model else 'Select a model' }}
               </button>
-              <ul class="dropdown-menu w-100 model-dropdown-menu" aria-labelledby="modelDropdown">
+              <ul class="dropdown-menu w-100 model-dropdown-menu" aria-labelledby="modelDropdown" style="max-height: 400px; overflow-y: auto;">
                 <li class="px-3 py-2 sticky-top bg-white">
                   <input type="text" class="form-control form-control-sm" id="modelSearch" placeholder="Search models...">
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                <div class="model-list-container">
-                  {% for model in llm_models %}
-                  <li class="model-item-container">
-                    <a class="dropdown-item model-item"
-                       href="#"
-                       data-model-id="{{ model.model_id }}"
-                       data-bs-toggle="popover"
-                       data-bs-trigger="hover"
-                       data-bs-html="true"
-                       data-bs-container="body"
-                       title="{{ model.provider }} / {{ model.name }}"
-                       data-bs-content="<div><strong>{{ model.description }}</strong></div><div>Context Length: {{ model.context_length }}</div><div>Completion Length: {{ model.completion_length }}</div><div>Prompt Price: ${{ '%.4f' % model.prompt_price }} / 1M tokens</div><div>Completion Price: ${{ '%.4f' % model.completion_price }} / 1M tokens</div>">
-                      {{ model.provider }} / {{ model.name }}
-                    </a>
-                  </li>
-                  {% endfor %}
-                </div>
+                {% for model in llm_models %}
+                <li class="model-item-container">
+                  <a class="dropdown-item model-item"
+                     href="#"
+                     data-model-id="{{ model.model_id }}"
+                     data-bs-toggle="popover"
+                     data-bs-trigger="hover"
+                     data-bs-html="true"
+                     data-bs-container="body"
+                     title="{{ model.provider }} / {{ model.name }}"
+                     data-bs-content="<div><strong>{{ model.description }}</strong></div><div>Context Length: {{ model.context_length }}</div><div>Completion Length: {{ model.completion_length }}</div><div>Prompt Price: ${{ '%.4f' % model.prompt_price }} / 1M tokens</div><div>Completion Price: ${{ '%.4f' % model.completion_price }} / 1M tokens</div>">
+                    {{ model.provider }} / {{ model.name }}
+                  </a>
+                </li>
+                {% endfor %}
               </ul>
             </div>
             <input type="hidden" name="model" id="selectedModelInput" value="{{ selected_model.id if selected_model else '' }}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Response Format</label>
-            <select class="form-select" name="response_format">
-              <option>json_schema</option>
-              <!-- Add more formats as needed -->
-            </select>
           </div>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -241,45 +232,40 @@
 
 {% block styles %}
 <style>
-  .model-dropdown-menu {
+  .dropdown-menu {
     max-height: 400px;
     overflow-y: auto;
   }
-  
-  .model-list-container {
-    max-height: 350px;
-    overflow-y: auto;
+  .model-dropdown-menu {
+    /* Remove max-height and overflow-y from here */
   }
-  
+  .model-list-container {
+    /* Remove max-height and overflow-y from here to avoid nested scrollbars */
+  }
   .model-item-container {
     margin: 0;
   }
-  
   .model-item {
     white-space: normal;
     word-wrap: break-word;
     cursor: pointer;
   }
-
   .popover {
     max-width: 300px;
     z-index: 1060;
   }
-
-  .model-dropdown-menu::-webkit-scrollbar {
+  .dropdown-menu::-webkit-scrollbar {
     width: 8px;
   }
-
-  .model-dropdown-menu::-webkit-scrollbar-track {
+  .dropdown-menu::-webkit-scrollbar-track {
     background: #f1f1f1;
+    border-radius: 4px;
   }
-
-  .model-dropdown-menu::-webkit-scrollbar-thumb {
+  .dropdown-menu::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 4px;
   }
-
-  .model-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  .dropdown-menu::-webkit-scrollbar-thumb:hover {
     background: #555;
   }
 </style>
@@ -339,8 +325,7 @@
                     temperature: parseFloat(data.temperature),
                     top_p: parseFloat(data.top_p),
                     presence_penalty: parseFloat(data.presence_penalty),
-                    frequency_penalty: parseFloat(data.frequency_penalty),
-                    response_format: data.response_format
+                    frequency_penalty: parseFloat(data.frequency_penalty)
                 },
                 variables: Object.fromEntries(variables)
             })
