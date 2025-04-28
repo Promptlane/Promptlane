@@ -89,35 +89,50 @@
           </div>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0" for="maxTokensRange">Max Tokens</label>
+              <label class="form-label mb-0" for="maxTokensRange">
+                Max Tokens
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Maximum number of tokens in the generated response."></i>
+              </label>
               <span class="small text-muted" id="maxTokensValue">12425</span>
             </div>
             <input type="range" class="form-range" min="1" max="128000" value="12425" name="max_tokens" id="maxTokensRange">
           </div>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0" for="temperatureRange">Temperature</label>
+              <label class="form-label mb-0" for="temperatureRange">
+                Temperature
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Controls randomness: higher values make output more creative, lower values more focused and deterministic."></i>
+              </label>
               <span class="small text-muted" id="temperatureValue">1.45</span>
             </div>
             <input type="range" class="form-range" min="0" max="2" step="0.01" value="1.45" name="temperature" id="temperatureRange">
           </div>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0" for="topPRange">Top P</label>
+              <label class="form-label mb-0" for="topPRange">
+                Top P
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Limits the next token selection to a subset with cumulative probability P (nucleus sampling). Lower values make output more focused."></i>
+              </label>
               <span class="small text-muted" id="topPValue">0.9</span>
             </div>
             <input type="range" class="form-range" min="0" max="1" step="0.01" value="0.9" name="top_p" id="topPRange">
           </div>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0" for="presencePenaltyRange">Presence Penalty</label>
+              <label class="form-label mb-0" for="presencePenaltyRange">
+                Presence Penalty
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Penalizes new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics."></i>
+              </label>
               <span class="small text-muted" id="presencePenaltyValue">-0.25</span>
             </div>
             <input type="range" class="form-range" min="-2" max="2" step="0.01" value="-0.25" name="presence_penalty" id="presencePenaltyRange">
           </div>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0" for="frequencyPenaltyRange">Frequency Penalty</label>
+              <label class="form-label mb-0" for="frequencyPenaltyRange">
+                Frequency Penalty
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Penalizes new tokens based on their frequency in the text so far, reducing repetition."></i>
+              </label>
               <span class="small text-muted" id="frequencyPenaltyValue">0.1</span>
             </div>
             <input type="range" class="form-range" min="-2" max="2" step="0.01" value="0.1" name="frequency_penalty" id="frequencyPenaltyRange">
@@ -222,6 +237,12 @@
             value.textContent = range.value;
           });
         }
+      });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
       });
     });
 </script>
