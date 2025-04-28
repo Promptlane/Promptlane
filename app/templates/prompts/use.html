@@ -21,6 +21,32 @@
 {% endblock %}
 
 {% block content %}
+<!-- Add this modal at the top of the content block -->
+<div class="modal fade" id="missingVariablesModal" tabindex="-1" aria-labelledby="missingVariablesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="missingVariablesModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    Missing Variables
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Please provide values for the following variables before running the test:</p>
+                <div class="list-group">
+                    <div id="missingVariablesList" class="list-group-item list-group-item-warning">
+                        <!-- Missing variables will be listed here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="page-header d-flex align-items-center mb-3">
     <a href="/projects/{{ project.id }}/prompts/{{ prompt.id }}" class="btn btn-sm btn-outline-secondary me-3">
         <i class="bi bi-arrow-left"></i> Back to Prompt
@@ -141,7 +167,7 @@
             </div>
             <input type="range" class="form-range" min="0" max="1" step="0.01" value="0.9" name="top_p" id="topPRange">
           </div>
-          <div class="mb-3">
+          <div class="mb-3 openai-only" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <label class="form-label mb-0" for="presencePenaltyRange">
                 Presence Penalty
@@ -151,7 +177,7 @@
             </div>
             <input type="range" class="form-range" min="-2" max="2" step="0.01" value="-0.25" name="presence_penalty" id="presencePenaltyRange">
           </div>
-          <div class="mb-3">
+          <div class="mb-3 openai-only" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <label class="form-label mb-0" for="frequencyPenaltyRange">
                 Frequency Penalty
@@ -163,8 +189,8 @@
           </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary w-100 mb-4">
-        <i class="bi bi-lightning-fill me-1"></i> Generate
+      <button type="button" class="btn btn-primary w-100 mb-4" onclick="runTest()">
+        <i class="bi bi-play-fill me-1"></i> Run Test
       </button>
     </form>
   </div>
@@ -181,30 +207,14 @@
         <pre class="prompt-section">{{ prompt.user_prompt }}</pre>
       </div>
     </div>
-    {% if prompt.generated_system or prompt.generated_user %}
-    <div class="card mb-4">
+    <div class="card mb-4" id="testResultsCard" style="display: none;">
       <div class="card-header">
-        <i class="bi bi-code-slash me-2"></i> Generated Output
+        <i class="bi bi-code-slash me-2"></i> Test Results
       </div>
       <div class="card-body">
-        <h6>System Prompt (with Variables)</h6>
-        <pre class="prompt-section">{{ prompt.generated_system }}</pre>
-        <h6>User Prompt (with Variables)</h6>
-        <pre class="prompt-section">{{ prompt.generated_user }}</pre>
+        <div id="testResults"></div>
       </div>
     </div>
-    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-      <button class="btn btn-outline-primary" onclick="copyToClipboard('system')">
-        <i class="bi bi-clipboard me-1"></i> Copy System
-      </button>
-      <button class="btn btn-outline-primary" onclick="copyToClipboard('user')">
-        <i class="bi bi-clipboard me-1"></i> Copy User
-      </button>
-      <button class="btn btn-primary" onclick="copyToClipboard('both')">
-        <i class="bi bi-clipboard-check me-1"></i> Copy Both
-      </button>
-    </div>
-    {% endif %}
     {% if prompt.variables %}
     <div class="card mt-4">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -277,6 +287,163 @@
 
 {% block scripts %}
 <script>
+    function runTest() {
+        const form = document.getElementById('variableForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Show loading state
+        const button = form.querySelector('button[type="button"]');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Running Test...';
+        button.disabled = true;
+
+        // Get the selected model
+        const selectedModel = document.getElementById('selectedModelInput').value;
+        if (!selectedModel) {
+            showModelSelectionAlert();
+            button.innerHTML = originalText;
+            button.disabled = false;
+            return;
+        }
+
+        // Validate dynamic variables
+        const variables = Object.entries(data)
+            .filter(([key]) => key.startsWith('var_'))
+            .map(([key, value]) => [key.replace('var_', ''), value]);
+
+        const missingVariables = variables
+            .filter(([_, value]) => !value || value.trim() === '')
+            .map(([key]) => key);
+
+        if (missingVariables.length > 0) {
+            showMissingVariablesAlert(missingVariables);
+            button.innerHTML = originalText;
+            button.disabled = false;
+            return;
+        }
+
+        // Call the appropriate API based on the selected model
+        fetch('/api/test-prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                project_id: '{{ project.id }}',
+                prompt_id: '{{ prompt.id }}',
+                version: '{{ prompt.version }}',
+                model: selectedModel,
+                parameters: {
+                    max_tokens: parseInt(data.max_tokens),
+                    temperature: parseFloat(data.temperature),
+                    top_p: parseFloat(data.top_p),
+                    presence_penalty: parseFloat(data.presence_penalty),
+                    frequency_penalty: parseFloat(data.frequency_penalty),
+                    response_format: data.response_format
+                },
+                variables: Object.fromEntries(variables)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Show results card
+            const resultsCard = document.getElementById('testResultsCard');
+            const resultsDiv = document.getElementById('testResults');
+            resultsCard.style.display = 'block';
+            
+            // Format and display results
+            resultsDiv.innerHTML = `
+                <div class="mb-3">
+                    <h6>System Prompt (with Variables)</h6>
+                    <pre class="prompt-section">${data.generated_system}</pre>
+                </div>
+                <div class="mb-3">
+                    <h6>User Prompt (with Variables)</h6>
+                    <pre class="prompt-section">${data.generated_user}</pre>
+                </div>
+                <div class="mb-3">
+                    <h6>Model Response</h6>
+                    <pre class="prompt-section">${data.response}</pre>
+                </div>
+                <div class="mb-3">
+                    <h6>Usage</h6>
+                    <pre class="prompt-section">Prompt Tokens: ${data.usage.prompt_tokens}
+Completion Tokens: ${data.usage.completion_tokens}
+Total Tokens: ${data.usage.total_tokens}</pre>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorAlert('An error occurred while running the test');
+        })
+        .finally(() => {
+            // Reset button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+
+    function showMissingVariablesAlert(missingVariables) {
+        const missingVariablesList = document.getElementById('missingVariablesList');
+        missingVariablesList.innerHTML = missingVariables
+            .map(variable => `<div class="d-flex align-items-center mb-2">
+                <i class="bi bi-dot me-2"></i>
+                <span class="fw-medium">${variable}</span>
+            </div>`)
+            .join('');
+        
+        const modal = new bootstrap.Modal(document.getElementById('missingVariablesModal'));
+        modal.show();
+    }
+
+    function showModelSelectionAlert() {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Please select a model first
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }
+
+    function showErrorAlert(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }
+
     function copyToClipboard(type) {
         let textToCopy = '';
         const promptSections = document.querySelectorAll('.prompt-section');
@@ -325,6 +492,13 @@
           e.preventDefault();
           document.getElementById('modelDropdown').textContent = this.textContent;
           document.getElementById('selectedModelInput').value = this.getAttribute('data-model-id');
+          
+          // Show/hide OpenAI-specific parameters
+          const isOpenAI = this.textContent.toLowerCase().includes('openai');
+          document.querySelectorAll('.openai-only').forEach(function(element) {
+            element.style.display = isOpenAI ? '' : 'none';
+          });
+          
           // Close the dropdown
           var dropdown = bootstrap.Dropdown.getInstance(document.getElementById('modelDropdown'));
           if (dropdown) {
