@@ -61,97 +61,117 @@
 </div>
 {% endif %}
 
-<div class="content-container">
-    {% if prompt.variables %}
-    <div class="card mb-4">
+<div class="row">
+  <!-- Left: Model & Parameters -->
+  <div class="col-md-4">
+    <form id="variableForm" method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
+      <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-braces me-2"></i> Fill in Variables</h5>
+          <i class="bi bi-cpu me-2"></i> Model
         </div>
         <div class="card-body">
-            <form id="variableForm" method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
-                {% for variable in prompt.variables %}
-                <div class="mb-3">
-                    <label for="{{ variable }}" class="form-label fw-semibold">{{ variable }}</label>
-                    <input type="text" class="form-control" id="{{ variable }}" name="var_{{ variable }}" 
-                           value="{{ var_values[variable] if var_values and variable in var_values else '' }}" required>
-                </div>
-                {% endfor %}
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-lightning-fill me-1"></i> Generate
-                    </button>
-                </div>
-            </form>
+          <div class="mb-3">
+            <label class="form-label">Model</label>
+            <select class="form-select" name="model">
+              <option>OpenAI / gpt-4o-2024-08-06</option>
+              <!-- Add more models as needed -->
+            </select>
+            <div class="small text-muted mt-1">
+              <i class="bi bi-memory"></i> 128,000 | 16,384 &nbsp; <i class="bi bi-currency-dollar"></i> $0.0025 | 0.01
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Response Format</label>
+            <select class="form-select" name="response_format">
+              <option>json_schema</option>
+              <!-- Add more formats as needed -->
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Max Tokens <span class="float-end" id="maxTokensValue">12425</span></label>
+            <input type="range" class="form-range" min="1" max="128000" value="12425" name="max_tokens" id="maxTokensRange">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Temperature <span class="float-end" id="temperatureValue">1.45</span></label>
+            <input type="range" class="form-range" min="0" max="2" step="0.01" value="1.45" name="temperature" id="temperatureRange">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Top P <span class="float-end" id="topPValue">0.9</span></label>
+            <input type="range" class="form-range" min="0" max="1" step="0.01" value="0.9" name="top_p" id="topPRange">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Presence Penalty <span class="float-end" id="presencePenaltyValue">-0.25</span></label>
+            <input type="range" class="form-range" min="-2" max="2" step="0.01" value="-0.25" name="presence_penalty" id="presencePenaltyRange">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Frequency Penalty <span class="float-end" id="frequencyPenaltyValue">0.1</span></label>
+            <input type="range" class="form-range" min="-2" max="2" step="0.01" value="0.1" name="frequency_penalty" id="frequencyPenaltyRange">
+          </div>
         </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mb-4">
+        <i class="bi bi-lightning-fill me-1"></i> Generate
+      </button>
+    </form>
+  </div>
+  <!-- Right: Prompt Preview & Results -->
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-eye me-2"></i> Prompt Preview
+      </div>
+      <div class="card-body">
+        <h6>System Prompt</h6>
+        <pre class="prompt-section">{{ prompt.system_prompt }}</pre>
+        <h6>User Prompt</h6>
+        <pre class="prompt-section">{{ prompt.user_prompt }}</pre>
+      </div>
     </div>
-    {% else %}
-    <div class="alert alert-info mb-4">
-        <i class="bi bi-info-circle me-2"></i> This prompt doesn't have any variables to fill in.
-    </div>
-    <div class="d-grid gap-2 mb-4">
-        <form method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-lightning-fill me-1"></i> Generate
-            </button>
-        </form>
-    </div>
-    {% endif %}
-
-    <div class="row">
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-gear me-2"></i> System Prompt
-                {% if prompt.variables|length > 0 %}
-                <span class="badge bg-secondary ms-2">Contains Variables</span>
-                {% endif %}
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.system_prompt }}</div>
-        </div>
-        
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-chat-left-text me-2"></i> User Prompt
-                {% if prompt.variables|length > 0 %}
-                <span class="badge bg-secondary ms-2">Contains Variables</span>
-                {% endif %}
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.user_prompt }}</div>
-        </div>
-    </div>
-    
     {% if prompt.generated_system or prompt.generated_user %}
-    <hr class="my-4">
-    
-    <h4 class="mb-3"><i class="bi bi-code-slash me-2"></i> Generated Prompts</h4>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-gear me-2"></i> System Prompt (with Variables)
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.generated_system }}</div>
-        </div>
-        
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-chat-left-text me-2"></i> User Prompt (with Variables)
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.generated_user }}</div>
-        </div>
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-code-slash me-2"></i> Generated Output
+      </div>
+      <div class="card-body">
+        <h6>System Prompt (with Variables)</h6>
+        <pre class="prompt-section">{{ prompt.generated_system }}</pre>
+        <h6>User Prompt (with Variables)</h6>
+        <pre class="prompt-section">{{ prompt.generated_user }}</pre>
+      </div>
     </div>
-    
     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-        <button class="btn btn-outline-primary" onclick="copyToClipboard('system')">
-            <i class="bi bi-clipboard me-1"></i> Copy System
-        </button>
-        <button class="btn btn-outline-primary" onclick="copyToClipboard('user')">
-            <i class="bi bi-clipboard me-1"></i> Copy User
-        </button>
-        <button class="btn btn-primary" onclick="copyToClipboard('both')">
-            <i class="bi bi-clipboard-check me-1"></i> Copy Both
-        </button>
+      <button class="btn btn-outline-primary" onclick="copyToClipboard('system')">
+        <i class="bi bi-clipboard me-1"></i> Copy System
+      </button>
+      <button class="btn btn-outline-primary" onclick="copyToClipboard('user')">
+        <i class="bi bi-clipboard me-1"></i> Copy User
+      </button>
+      <button class="btn btn-primary" onclick="copyToClipboard('both')">
+        <i class="bi bi-clipboard-check me-1"></i> Copy Both
+      </button>
     </div>
     {% endif %}
+    {% if prompt.variables %}
+    <div class="card mt-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-braces me-2"></i> Variables</span>
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#variablesCollapse" aria-expanded="true" aria-controls="variablesCollapse">
+          <i class="bi bi-chevron-down"></i>
+        </button>
+      </div>
+      <div class="collapse show" id="variablesCollapse">
+        <div class="card-body">
+          {% for variable in prompt.variables %}
+          <div class="mb-3">
+            <label class="form-label">{{ variable }}</label>
+            <input type="text" class="form-control" name="var_{{ variable }}" value="{{ var_values[variable] if var_values and variable in var_values else '' }}" form="variableForm">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
 
@@ -159,18 +179,35 @@
 <script>
     function copyToClipboard(type) {
         let textToCopy = '';
-        
+        const promptSections = document.querySelectorAll('.prompt-section');
         if (type === 'system' || type === 'both') {
-            textToCopy += "System Prompt:\n" + document.querySelectorAll('.prompt-section')[type === 'both' ? 2 : 0].textContent + "\n\n";
+            textToCopy += "System Prompt:\n" + promptSections[type === 'both' ? 2 : 0].textContent + "\n\n";
         }
-        
         if (type === 'user' || type === 'both') {
-            textToCopy += "User Prompt:\n" + document.querySelectorAll('.prompt-section')[type === 'both' ? 3 : 1].textContent;
+            textToCopy += "User Prompt:\n" + promptSections[type === 'both' ? 3 : 1].textContent;
         }
-        
         navigator.clipboard.writeText(textToCopy).then(() => {
             alert('Copied to clipboard!');
         });
     }
+    // Live update slider values
+    document.addEventListener('DOMContentLoaded', function() {
+      const sliders = [
+        {id: 'maxTokensRange', valueId: 'maxTokensValue'},
+        {id: 'temperatureRange', valueId: 'temperatureValue'},
+        {id: 'topPRange', valueId: 'topPValue'},
+        {id: 'presencePenaltyRange', valueId: 'presencePenaltyValue'},
+        {id: 'frequencyPenaltyRange', valueId: 'frequencyPenaltyValue'}
+      ];
+      sliders.forEach(function(slider) {
+        const range = document.getElementById(slider.id);
+        const value = document.getElementById(slider.valueId);
+        if (range && value) {
+          range.addEventListener('input', function() {
+            value.textContent = range.value;
+          });
+        }
+      });
+    });
 </script>
 {% endblock %} 
