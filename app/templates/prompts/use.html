@@ -71,14 +71,31 @@
         </div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label">Model</label>
-            <select class="form-select" name="model">
-              <option>OpenAI / gpt-4o-2024-08-06</option>
-              <!-- Add more models as needed -->
-            </select>
-            <div class="small text-muted mt-1">
-              <i class="bi bi-memory"></i> 128,000 | 16,384 &nbsp; <i class="bi bi-currency-dollar"></i> $0.0025 | 0.01
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label mb-0">Model</label>
             </div>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary w-100 text-start" type="button" id="modelDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ selected_model.name if selected_model else 'Select a model' }}
+              </button>
+              <ul class="dropdown-menu w-100" aria-labelledby="modelDropdown">
+                {% for model in llm_models %}
+                <li>
+                  <a class="dropdown-item model-item"
+                     href="#"
+                     data-model-id="{{ model.model_id }}"
+                     data-bs-toggle="popover"
+                     data-bs-trigger="hover focus"
+                     data-bs-html="true"
+                     title="{{ model.provider }} / {{ model.name }}"
+                     data-bs-content="<div><strong>{{ model.description }}</strong></div><div>Context Length: {{ model.context_length }}</div><div>Completion Length: {{ model.completion_length }}</div><div>Prompt Price: ${{ '%.4f' % model.prompt_price }} / 1000 tokens</div><div>Completion Price: ${{ '%.4f' % model.completion_price }} / 1000 tokens</div>">
+                    {{ model.provider }} / {{ model.name }}
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            <input type="hidden" name="model" id="selectedModelInput" value="{{ selected_model.id if selected_model else '' }}">
           </div>
           <div class="mb-3">
             <label class="form-label">Response Format</label>
@@ -240,6 +257,19 @@
       });
     });
     document.addEventListener('DOMContentLoaded', function () {
+      // Enable Bootstrap popovers for model items
+      var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+      popoverTriggerList.forEach(function (popoverTriggerEl) {
+        new bootstrap.Popover(popoverTriggerEl);
+      });
+      // Handle model selection
+      document.querySelectorAll('.model-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          document.getElementById('modelDropdown').textContent = this.textContent;
+          document.getElementById('selectedModelInput').value = this.getAttribute('data-model-id');
+        });
+      });
       var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
       tooltipTriggerList.forEach(function (tooltipTriggerEl) {
         new bootstrap.Tooltip(tooltipTriggerEl);

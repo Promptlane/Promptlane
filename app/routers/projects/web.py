@@ -17,6 +17,7 @@ from app.db import models
 from app.db.models.activity import ActivityType
 from app.utils.format_date import format_datetime, format_relative_time
 from app.utils.token_counter import count_prompt_tokens
+from app.managers.llm_model_manager import LLMModelManager
 
 # Create router
 router = APIRouter(tags=["projects-web"])
@@ -38,6 +39,10 @@ def get_prompt_manager() -> PromptManager:
 def get_activity_manager() -> ActivityManager:
     """Dependency to get activity manager instance"""
     return ActivityManager()
+
+def get_llm_model_manager() -> LLMModelManager:
+    """Dependency to get activity manager instance"""
+    return LLMModelManager()
 
 
 @router.get("", response_class=HTMLResponse)
@@ -915,6 +920,7 @@ async def prompt_use_page(
     prompt_id: str,
     project_manager: ProjectManager = Depends(get_project_manager),
     prompt_manager: PromptManager = Depends(get_prompt_manager),
+    llm_model_manager: LLMModelManager = Depends(get_llm_model_manager),
 ):
     """Render the prompt use page for a specific prompt within a project"""
     try:
@@ -974,6 +980,9 @@ async def prompt_use_page(
         )
         variables = list(set(user_prompt_variables + system_prompt_variables))
 
+    # Fetch all LLM models
+    llm_models = llm_model_manager.get_all_models()
+
     # Return the template response
     return templates.TemplateResponse(
         "prompts/use.html",
@@ -993,6 +1002,7 @@ async def prompt_use_page(
                 "user_prompt": prompt.user_prompt,
                 "variables": variables,
             },
+            "llm_models": llm_models,
         },
     )
 

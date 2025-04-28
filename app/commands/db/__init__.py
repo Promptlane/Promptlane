@@ -1,7 +1,7 @@
 import click
 # from .init import init_db
 # from .superuser import create_superuser
-from .tables import check_tables, list_tables
+from .tables import check_tables, list_tables, seed_llm_models
 
 @click.group()
 def db_group():
@@ -13,3 +13,4 @@ def db_group():
 
 db_group.add_command(check_tables, name='check-tables')
 db_group.add_command(list_tables, name='list-tables')
+db_group.add_command(seed_llm_models, name="seed-llm-models")
