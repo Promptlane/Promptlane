@@ -61,97 +61,164 @@
 </div>
 {% endif %}
 
-<div class="content-container">
-    {% if prompt.variables %}
-    <div class="card mb-4">
+<div class="row">
+  <!-- Left: Model & Parameters -->
+  <div class="col-md-4">
+    <form id="variableForm" method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
+      <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-braces me-2"></i> Fill in Variables</h5>
+          <i class="bi bi-cpu me-2"></i> Model
         </div>
         <div class="card-body">
-            <form id="variableForm" method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
-                {% for variable in prompt.variables %}
-                <div class="mb-3">
-                    <label for="{{ variable }}" class="form-label fw-semibold">{{ variable }}</label>
-                    <input type="text" class="form-control" id="{{ variable }}" name="var_{{ variable }}" 
-                           value="{{ var_values[variable] if var_values and variable in var_values else '' }}" required>
-                </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label mb-0">Model</label>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary w-100 text-start" type="button" id="modelDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ selected_model.name if selected_model else 'Select a model' }}
+              </button>
+              <ul class="dropdown-menu w-100" aria-labelledby="modelDropdown">
+                {% for model in llm_models %}
+                <li>
+                  <a class="dropdown-item model-item"
+                     href="#"
+                     data-model-id="{{ model.model_id }}"
+                     data-bs-toggle="popover"
+                     data-bs-trigger="hover focus"
+                     data-bs-html="true"
+                     title="{{ model.provider }} / {{ model.name }}"
+                     data-bs-content="<div><strong>{{ model.description }}</strong></div><div>Context Length: {{ model.context_length }}</div><div>Completion Length: {{ model.completion_length }}</div><div>Prompt Price: ${{ '%.4f' % model.prompt_price }} / 1000 tokens</div><div>Completion Price: ${{ '%.4f' % model.completion_price }} / 1000 tokens</div>">
+                    {{ model.provider }} / {{ model.name }}
+                  </a>
+                </li>
                 {% endfor %}
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-lightning-fill me-1"></i> Generate
-                    </button>
-                </div>
-            </form>
+              </ul>
+            </div>
+            <input type="hidden" name="model" id="selectedModelInput" value="{{ selected_model.id if selected_model else '' }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Response Format</label>
+            <select class="form-select" name="response_format">
+              <option>json_schema</option>
+              <!-- Add more formats as needed -->
+            </select>
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="maxTokensRange">
+                Max Tokens
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Maximum number of tokens in the generated response."></i>
+              </label>
+              <span class="small text-muted" id="maxTokensValue">12425</span>
+            </div>
+            <input type="range" class="form-range" min="1" max="128000" value="12425" name="max_tokens" id="maxTokensRange">
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="temperatureRange">
+                Temperature
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Controls randomness: higher values make output more creative, lower values more focused and deterministic."></i>
+              </label>
+              <span class="small text-muted" id="temperatureValue">1.45</span>
+            </div>
+            <input type="range" class="form-range" min="0" max="2" step="0.01" value="1.45" name="temperature" id="temperatureRange">
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="topPRange">
+                Top P
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Limits the next token selection to a subset with cumulative probability P (nucleus sampling). Lower values make output more focused."></i>
+              </label>
+              <span class="small text-muted" id="topPValue">0.9</span>
+            </div>
+            <input type="range" class="form-range" min="0" max="1" step="0.01" value="0.9" name="top_p" id="topPRange">
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="presencePenaltyRange">
+                Presence Penalty
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Penalizes new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics."></i>
+              </label>
+              <span class="small text-muted" id="presencePenaltyValue">-0.25</span>
+            </div>
+            <input type="range" class="form-range" min="-2" max="2" step="0.01" value="-0.25" name="presence_penalty" id="presencePenaltyRange">
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="frequencyPenaltyRange">
+                Frequency Penalty
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Penalizes new tokens based on their frequency in the text so far, reducing repetition."></i>
+              </label>
+              <span class="small text-muted" id="frequencyPenaltyValue">0.1</span>
+            </div>
+            <input type="range" class="form-range" min="-2" max="2" step="0.01" value="0.1" name="frequency_penalty" id="frequencyPenaltyRange">
+          </div>
         </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mb-4">
+        <i class="bi bi-lightning-fill me-1"></i> Generate
+      </button>
+    </form>
+  </div>
+  <!-- Right: Prompt Preview & Results -->
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-eye me-2"></i> Prompt Preview
+      </div>
+      <div class="card-body">
+        <h6>System Prompt</h6>
+        <pre class="prompt-section">{{ prompt.system_prompt }}</pre>
+        <h6>User Prompt</h6>
+        <pre class="prompt-section">{{ prompt.user_prompt }}</pre>
+      </div>
     </div>
-    {% else %}
-    <div class="alert alert-info mb-4">
-        <i class="bi bi-info-circle me-2"></i> This prompt doesn't have any variables to fill in.
-    </div>
-    <div class="d-grid gap-2 mb-4">
-        <form method="POST" action="/projects/{{ project.id }}/prompts/{{ prompt.id }}/generate{% if prompt.version %}?version={{ prompt.version }}{% endif %}">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-lightning-fill me-1"></i> Generate
-            </button>
-        </form>
-    </div>
-    {% endif %}
-
-    <div class="row">
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-gear me-2"></i> System Prompt
-                {% if prompt.variables|length > 0 %}
-                <span class="badge bg-secondary ms-2">Contains Variables</span>
-                {% endif %}
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.system_prompt }}</div>
-        </div>
-        
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-chat-left-text me-2"></i> User Prompt
-                {% if prompt.variables|length > 0 %}
-                <span class="badge bg-secondary ms-2">Contains Variables</span>
-                {% endif %}
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.user_prompt }}</div>
-        </div>
-    </div>
-    
     {% if prompt.generated_system or prompt.generated_user %}
-    <hr class="my-4">
-    
-    <h4 class="mb-3"><i class="bi bi-code-slash me-2"></i> Generated Prompts</h4>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-gear me-2"></i> System Prompt (with Variables)
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.generated_system }}</div>
-        </div>
-        
-        <div class="col-md-6">
-            <h5 class="mb-3">
-                <i class="bi bi-chat-left-text me-2"></i> User Prompt (with Variables)
-            </h5>
-            <div class="prompt-section mb-4">{{ prompt.generated_user }}</div>
-        </div>
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-code-slash me-2"></i> Generated Output
+      </div>
+      <div class="card-body">
+        <h6>System Prompt (with Variables)</h6>
+        <pre class="prompt-section">{{ prompt.generated_system }}</pre>
+        <h6>User Prompt (with Variables)</h6>
+        <pre class="prompt-section">{{ prompt.generated_user }}</pre>
+      </div>
     </div>
-    
     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-        <button class="btn btn-outline-primary" onclick="copyToClipboard('system')">
-            <i class="bi bi-clipboard me-1"></i> Copy System
-        </button>
-        <button class="btn btn-outline-primary" onclick="copyToClipboard('user')">
-            <i class="bi bi-clipboard me-1"></i> Copy User
-        </button>
-        <button class="btn btn-primary" onclick="copyToClipboard('both')">
-            <i class="bi bi-clipboard-check me-1"></i> Copy Both
-        </button>
+      <button class="btn btn-outline-primary" onclick="copyToClipboard('system')">
+        <i class="bi bi-clipboard me-1"></i> Copy System
+      </button>
+      <button class="btn btn-outline-primary" onclick="copyToClipboard('user')">
+        <i class="bi bi-clipboard me-1"></i> Copy User
+      </button>
+      <button class="btn btn-primary" onclick="copyToClipboard('both')">
+        <i class="bi bi-clipboard-check me-1"></i> Copy Both
+      </button>
     </div>
     {% endif %}
+    {% if prompt.variables %}
+    <div class="card mt-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-braces me-2"></i> Variables</span>
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#variablesCollapse" aria-expanded="true" aria-controls="variablesCollapse">
+          <i class="bi bi-chevron-down"></i>
+        </button>
+      </div>
+      <div class="collapse show" id="variablesCollapse">
+        <div class="card-body">
+          {% for variable in prompt.variables %}
+          <div class="mb-3">
+            <label class="form-label">{{ variable }}</label>
+            <input type="text" class="form-control" name="var_{{ variable }}" value="{{ var_values[variable] if var_values and variable in var_values else '' }}" form="variableForm">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
 
@@ -159,18 +226,54 @@
 <script>
     function copyToClipboard(type) {
         let textToCopy = '';
-        
+        const promptSections = document.querySelectorAll('.prompt-section');
         if (type === 'system' || type === 'both') {
-            textToCopy += "System Prompt:\n" + document.querySelectorAll('.prompt-section')[type === 'both' ? 2 : 0].textContent + "\n\n";
+            textToCopy += "System Prompt:\n" + promptSections[type === 'both' ? 2 : 0].textContent + "\n\n";
         }
-        
         if (type === 'user' || type === 'both') {
-            textToCopy += "User Prompt:\n" + document.querySelectorAll('.prompt-section')[type === 'both' ? 3 : 1].textContent;
+            textToCopy += "User Prompt:\n" + promptSections[type === 'both' ? 3 : 1].textContent;
         }
-        
         navigator.clipboard.writeText(textToCopy).then(() => {
             alert('Copied to clipboard!');
         });
     }
+    // Live update slider values
+    document.addEventListener('DOMContentLoaded', function() {
+      const sliders = [
+        {id: 'maxTokensRange', valueId: 'maxTokensValue'},
+        {id: 'temperatureRange', valueId: 'temperatureValue'},
+        {id: 'topPRange', valueId: 'topPValue'},
+        {id: 'presencePenaltyRange', valueId: 'presencePenaltyValue'},
+        {id: 'frequencyPenaltyRange', valueId: 'frequencyPenaltyValue'}
+      ];
+      sliders.forEach(function(slider) {
+        const range = document.getElementById(slider.id);
+        const value = document.getElementById(slider.valueId);
+        if (range && value) {
+          range.addEventListener('input', function() {
+            value.textContent = range.value;
+          });
+        }
+      });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      // Enable Bootstrap popovers for model items
+      var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+      popoverTriggerList.forEach(function (popoverTriggerEl) {
+        new bootstrap.Popover(popoverTriggerEl);
+      });
+      // Handle model selection
+      document.querySelectorAll('.model-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          document.getElementById('modelDropdown').textContent = this.textContent;
+          document.getElementById('selectedModelInput').value = this.getAttribute('data-model-id');
+        });
+      });
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    });
 </script>
 {% endblock %} 

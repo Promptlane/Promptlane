@@ -46,3 +46,10 @@ def list_tables():
             click.echo("No tables found in the database")
     finally:
         db.close_session(session)
+
+@click.command()
+def seed_llm_models():
+    """Seed the database with LLM models (OpenAI, Anthropic, etc.)."""
+    from app.db.seed.llm_models.llm_models import seed
+    seed()
+    click.echo("LLM models seeded successfully.")

@@ -10,6 +10,7 @@ from .project import Project
 from .prompt import Prompt
 from .activity import Activity, ActivityType
 from .comment import Comment, Reply
+from .llm_model import LLMModel
 
 __all__ = [
     'Base',
@@ -22,5 +23,6 @@ __all__ = [
     'Activity',
     'ActivityType',
     'Comment',
-    'Reply'
+    'Reply',
+    'LLMModel'
 ] 
