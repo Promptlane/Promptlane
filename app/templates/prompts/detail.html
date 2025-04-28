@@ -45,6 +45,24 @@
     font-size: 0.875rem;
     padding: 0.35rem 0.65rem;
 }
+
+/* Variable highlighting styles */
+.prompt-section {
+    white-space: pre-wrap;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+}
+
+.variable-highlight {
+    background-color: #e3f2fd;
+    color: #0d6efd;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    border: 1px solid #b8daff;
+}
 </style>
 {% endblock %}
 
@@ -244,7 +262,7 @@
                     <span class="badge bg-secondary ms-2">Contains Variables</span>
                     {% endif %}
                 </h5>
-                <div class="prompt-section">{{ prompt.system_prompt }}</div>
+                <div class="prompt-section">{{ prompt.system_prompt|replace('{{', '<span class="variable-highlight">{{')|replace('}}', '}}</span>')|safe }}</div>
             </div>
             
             <div class="mb-4">
@@ -254,7 +272,7 @@
                     <span class="badge bg-secondary ms-2">Contains Variables</span>
                     {% endif %}
                 </h5>
-                <div class="prompt-section">{{ prompt.user_prompt }}</div>
+                <div class="prompt-section">{{ prompt.user_prompt|replace('{{', '<span class="variable-highlight">{{')|replace('}}', '}}</span>')|safe }}</div>
             </div>
             
             {% if prompt.variables|length > 0 %}
